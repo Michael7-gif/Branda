@@ -1,0 +1,495 @@
+.business-setup-page {
+  min-height: 100vh;
+  background: #f8f3ed;
+  color: #2c1b13;
+}
+
+.business-setup-container {
+  width: min(1120px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 28px 0 70px;
+}
+
+.business-setup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 70px;
+}
+
+.business-setup-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 23px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+}
+
+.business-setup-brand-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: #2c1b13;
+  color: #f8f3ed;
+  font-size: 18px;
+}
+
+.business-setup-header-right {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.business-setup-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #806b5d;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.business-setup-progress-number {
+  color: #2c1b13;
+  font-weight: 700;
+}
+
+.business-setup-dashboard-button {
+  height: 42px;
+  padding: 0 19px;
+  border: 1px solid #2c1b13;
+  border-radius: 3px;
+  background: transparent;
+  color: #2c1b13;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.business-setup-dashboard-button:hover {
+  background: #2c1b13;
+  color: #fff;
+}
+
+.business-setup-content {
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.business-setup-intro {
+  max-width: 700px;
+  margin-bottom: 58px;
+}
+
+.business-setup-eyebrow {
+  display: inline-block;
+  margin-bottom: 15px;
+  color: #967055;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 2.2px;
+}
+
+.business-setup-intro h1 {
+  margin: 0 0 18px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(42px, 5vw, 64px);
+  font-weight: 500;
+  line-height: 1.04;
+  letter-spacing: -2.5px;
+}
+
+.business-setup-intro p {
+  max-width: 600px;
+  margin: 0;
+  color: #806b5d;
+  font-size: 17px;
+  line-height: 1.7;
+}
+
+.business-setup-form {
+  background: #fffdf9;
+  padding: 0 44px;
+}
+
+.business-setup-section {
+  padding: 42px 0 46px;
+}
+
+.business-setup-section + .business-setup-section {
+  border-top: 1px solid #eee4db;
+}
+
+.business-setup-section-heading {
+  margin-bottom: 32px;
+}
+
+.business-setup-section-heading > div {
+  display: flex;
+  gap: 20px;
+}
+
+.business-setup-section-heading > div > span {
+  flex-shrink: 0;
+  padding-top: 5px;
+  color: #b09582;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.business-setup-section-heading h2 {
+  margin: 0 0 7px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 25px;
+  font-weight: 500;
+  letter-spacing: -0.5px;
+}
+
+.business-setup-section-heading p {
+  margin: 0;
+  color: #8a776a;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.business-setup-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 25px 26px;
+  padding-left: 37px;
+}
+
+.business-setup-field {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.business-setup-field-full {
+  grid-column: 1 / -1;
+}
+
+.business-setup-field label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #3b2a21;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.required-label,
+.optional-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.required-label {
+  color: #9a5c40;
+}
+
+.optional-label {
+  color: #a8988d;
+}
+
+.business-setup-field input,
+.business-setup-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #ded2c7;
+  border-radius: 3px;
+  background: #fff;
+  color: #2c1b13;
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+.business-setup-field input {
+  height: 52px;
+  padding: 0 15px;
+}
+
+.business-setup-field textarea {
+  min-height: 125px;
+  padding: 14px 15px;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.business-setup-field input::placeholder,
+.business-setup-field textarea::placeholder {
+  color: #b3a59a;
+}
+
+.business-setup-field input:focus,
+.business-setup-field textarea:focus {
+  border-color: #8a6249;
+  background: #fffefa;
+  box-shadow: 0 0 0 3px rgba(138, 98, 73, 0.08);
+}
+
+.business-logo-upload {
+  margin-left: 37px;
+}
+
+.business-logo-empty {
+  min-height: 175px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px dashed #cdbcae;
+  background: #faf6f1;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.business-logo-empty:hover {
+  border-color: #8a6249;
+  background: #f7f0e9;
+}
+
+.business-logo-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  margin-bottom: 5px;
+  background: #2c1b13;
+  color: #fff;
+  font-size: 25px;
+  font-weight: 300;
+}
+
+.business-logo-empty strong {
+  font-size: 14px;
+}
+
+.business-logo-empty small {
+  color: #9a887b;
+  font-size: 12px;
+}
+
+.business-logo-preview {
+  min-height: 175px;
+  display: flex;
+  align-items: center;
+  gap: 25px;
+  padding: 20px;
+  background: #faf6f1;
+}
+
+.business-logo-preview img {
+  width: 135px;
+  height: 135px;
+  object-fit: contain;
+  background: #fff;
+}
+
+.business-logo-change {
+  color: #7a533b;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.business-setup-error {
+  margin: 0 0 25px;
+  padding: 14px 16px;
+  background: #fff0ed;
+  color: #a33b2f;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.business-setup-submit-area {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+  padding: 32px 0 38px 37px;
+  border-top: 1px solid #eee4db;
+}
+
+.business-setup-submit-area strong {
+  display: block;
+  margin-bottom: 5px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 17px;
+  font-weight: 500;
+}
+
+.business-setup-submit-area p {
+  margin: 0;
+  color: #958277;
+  font-size: 12px;
+}
+
+.business-setup-submit {
+  min-width: 190px;
+  height: 52px;
+  padding: 0 25px;
+  border: none;
+  border-radius: 3px;
+  background: #2c1b13;
+  color: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.business-setup-submit:hover:not(:disabled) {
+  background: #4a3024;
+  transform: translateY(-1px);
+}
+
+.business-setup-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 800px) {
+  .business-setup-container {
+    width: min(100% - 30px, 680px);
+    padding-top: 20px;
+  }
+
+  .business-setup-header {
+    margin-bottom: 50px;
+  }
+
+  .business-setup-header-right {
+    gap: 0;
+  }
+
+  .business-setup-progress {
+    display: none;
+  }
+
+  .business-setup-dashboard-button {
+    height: 38px;
+    padding: 0 15px;
+  }
+
+  .business-setup-intro {
+    margin-bottom: 38px;
+  }
+
+  .business-setup-intro h1 {
+    font-size: 43px;
+    letter-spacing: -1.8px;
+  }
+
+  .business-setup-intro p {
+    font-size: 15px;
+  }
+
+  .business-setup-form {
+    padding: 0 24px;
+  }
+
+  .business-setup-fields {
+    grid-template-columns: 1fr;
+    padding-left: 0;
+  }
+
+  .business-setup-field-full {
+    grid-column: auto;
+  }
+
+  .business-setup-section-heading > div {
+    gap: 14px;
+  }
+
+  .business-logo-upload {
+    margin-left: 0;
+  }
+
+  .business-setup-submit-area {
+    align-items: stretch;
+    flex-direction: column;
+    padding-left: 0;
+  }
+
+  .business-setup-submit {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .business-setup-container {
+    width: calc(100% - 24px);
+    padding-bottom: 35px;
+  }
+
+  .business-setup-brand {
+    font-size: 20px;
+  }
+
+  .business-setup-brand-mark {
+    width: 32px;
+    height: 32px;
+  }
+
+  .business-setup-dashboard-button {
+    padding: 0 13px;
+    font-size: 12px;
+  }
+
+  .business-setup-intro h1 {
+    font-size: 36px;
+  }
+
+  .business-setup-form {
+    padding: 0 18px;
+  }
+
+  .business-setup-section {
+    padding: 32px 0 36px;
+  }
+
+  .business-setup-section-heading h2 {
+    font-size: 22px;
+  }
+
+  .business-setup-section-heading p {
+    font-size: 13px;
+  }
+
+  .business-setup-fields {
+    gap: 20px;
+  }
+
+  .business-logo-preview {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .business-logo-preview img {
+    width: 110px;
+    height: 110px;
+  }
+}
