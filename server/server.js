@@ -29,6 +29,8 @@ app.use(
 
 app.use(express.json({ limit: "20mb" }));
 
+app.set("trust proxy", 1);
+
 app.use(
   session({
     store: new pgSession({
@@ -41,8 +43,11 @@ app.use(
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: false,
-      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      sameSite:
+        process.env.NODE_ENV === "production"
+          ? "none"
+          : "lax",
       maxAge: 1000 * 60 * 60 * 24 * 7
     }
   })

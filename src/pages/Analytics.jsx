@@ -1,10 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import "../styles/analytics.css";
-
-const API_URL = import.meta.env.DEV
-  ? "http://localhost:5000"
-  : "";
+import API_URL from "../services/api";
 
 export default function Analytics() {
   const [period, setPeriod] = useState("30");
@@ -215,8 +212,6 @@ export default function Analytics() {
         </div>
 
         <div className="analytics-content-grid">
-          
-
           <section className="analytics-card">
             <p className="analytics-label">
               PRODUCTS

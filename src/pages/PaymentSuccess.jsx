@@ -5,6 +5,7 @@ import {
   useSearchParams
 } from "react-router-dom";
 import "../styles/payment-success.css";
+import API_URL from "../services/api";
 
 export default function PaymentSuccess() {
   const navigate = useNavigate();
@@ -44,8 +45,7 @@ export default function PaymentSuccess() {
 
       try {
         const response = await fetch(
-          "http://localhost:5000/api/store/" +
-            encodeURIComponent(slug)
+          `${API_URL}/api/store/${encodeURIComponent(slug)}`
         );
 
         const data = await response.json();
@@ -103,8 +103,7 @@ export default function PaymentSuccess() {
 
       try {
         const paymentResponse = await fetch(
-          "http://localhost:5000/api/payment/verify/" +
-            encodeURIComponent(reference)
+          `${API_URL}/api/payment/verify/${encodeURIComponent(reference)}`
         );
 
         const paymentData =
@@ -162,7 +161,7 @@ export default function PaymentSuccess() {
         }
 
         const orderResponse = await fetch(
-          "http://localhost:5000/api/orders",
+          `${API_URL}/api/orders`,
           {
             method: "POST",
             headers: {

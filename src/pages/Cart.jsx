@@ -1,6 +1,7 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import "../styles/cart.css";
+import API_URL from "../services/api";
 
 export default function Cart() {
   const { slug } = useParams();
@@ -68,7 +69,9 @@ export default function Cart() {
     async function loadBusiness() {
       try {
         const response = await fetch(
-          "http://localhost:5000/api/store/" + currentSlug
+          `${API_URL}/api/store/${encodeURIComponent(
+            currentSlug
+          )}`
         );
 
         if (!response.ok) {
@@ -315,15 +318,15 @@ export default function Cart() {
               </div>
 
               <Link
-  to={
-    currentSlug
-      ? `/store/${currentSlug}/checkout`
-      : "/checkout"
-  }
-  className="cart-checkout-button"
->
-  Proceed to Checkout
-</Link>
+                to={
+                  currentSlug
+                    ? `/store/${currentSlug}/checkout`
+                    : "/checkout"
+                }
+                className="cart-checkout-button"
+              >
+                Proceed to Checkout
+              </Link>
             </aside>
           </div>
         )}

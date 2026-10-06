@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../styles/reset-password.css";
-
+import API_URL from "../services/api";
 export default function ResetPassword() {
   const navigate = useNavigate();
 
@@ -32,8 +32,7 @@ export default function ResetPassword() {
     setLoading(true);
 
     try {
-      const response = await fetch(
-        "http://localhost:5000/api/auth/reset-password",
+      const response = await fetch( `${API_URL}/api/auth/reset-password` ,
         {
           method: "POST",
           headers: {

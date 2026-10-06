@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import "../styles/verify-reset-code.css";
-
+import API_URL from "../services/api";
 export default function VerifyResetCode() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -34,8 +34,7 @@ export default function VerifyResetCode() {
     setLoading(true);
 
     try {
-      const response = await fetch(
-        "http://localhost:5000/api/auth/verify-reset-code",
+      const response = await fetch( `${API_URL}/api/auth/verify-reset-code`,
         {
           method: "POST",
           headers: {

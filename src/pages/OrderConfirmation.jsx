@@ -1,6 +1,7 @@
 import { Link, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import "../styles/order-confirmation.css";
+import API_URL from "../services/api";
 
 export default function OrderConfirmation() {
   const { slug } = useParams();
@@ -37,8 +38,7 @@ export default function OrderConfirmation() {
     async function loadStore() {
       try {
         const response = await fetch(
-          "http://localhost:5000/api/store/" +
-            encodeURIComponent(slug)
+          `${API_URL}/api/store/${encodeURIComponent(slug)}`
         );
 
         const data = await response.json();

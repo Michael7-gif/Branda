@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import "../styles/delivery.css";
+import API_URL from "../services/api";
 
 export default function Delivery() {
   const [business, setBusiness] = useState(null);
@@ -13,55 +14,149 @@ export default function Delivery() {
   useEffect(() => {
     window.scrollTo(0, 0);
 
-    try {
-      const savedBusiness = localStorage.getItem("branda_business");
+    async function loadDeliverySettings() {
+      try {
+        const response = await fetch(
+          `${API_URL}/api/business/me`,
+          {
+            credentials: "include"
+          }
+        );
 
-      if (savedBusiness) {
-        setBusiness(JSON.parse(savedBusiness));
-      }
-    } catch {
-      setBusiness(null);
-    }
+        const data = await response.json();
 
-    try {
-      const savedSettings = JSON.parse(
-        localStorage.getItem("branda_delivery_settings") || "null"
-      );
+        if (!response.ok || !data.success) {
+          return;
+        }
 
-      if (savedSettings) {
-        setFreeDelivery(savedSettings.freeDelivery === true);
-        setDeliveryFee(savedSettings.deliveryFee || "");
+        const currentBusiness = data.business;
+
+        setBusiness(currentBusiness);
+
+        setFreeDelivery(
+          currentBusiness.free_delivery === true
+        );
+
+        setDeliveryFee(
+          currentBusiness.delivery_fee !== null &&
+          currentBusiness.delivery_fee !== undefined
+            ? String(currentBusiness.delivery_fee)
+            : ""
+        );
+
         setFreeDeliveryAmount(
-          savedSettings.freeDeliveryAmount || ""
+          currentBusiness.free_delivery_amount !== null &&
+          currentBusiness.free_delivery_amount !== undefined
+            ? String(currentBusiness.free_delivery_amount)
+            : ""
         );
+
         setDeliveryTime(
-          savedSettings.deliveryTime || "1–3 business days"
+          currentBusiness.delivery_time ||
+            "1–3 business days"
+        );
+
+        localStorage.setItem(
+          "branda_business",
+          JSON.stringify(currentBusiness)
+        );
+      } catch (error) {
+        console.error(
+          "Load delivery settings error:",
+          error
         );
       }
-    } catch {
-      setFreeDelivery(false);
-      setDeliveryFee("");
-      setFreeDeliveryAmount("");
-      setDeliveryTime("1–3 business days");
     }
+
+    loadDeliverySettings();
   }, []);
 
-  function saveSettings() {
-    localStorage.setItem(
-      "branda_delivery_settings",
-      JSON.stringify({
-        freeDelivery,
-        deliveryFee,
-        freeDeliveryAmount,
-        deliveryTime
-      })
-    );
+  async function saveSettings() {
+    try {
+      const response = await fetch(
+        `${API_URL}/api/business/me`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            businessName: business?.business_name || "",
+            phone: business?.phone || "",
+            email: business?.email || "",
+            description: business?.description || "",
+            address: business?.address || "",
+            whatsapp: business?.whatsapp || "",
+            instagram: business?.instagram || "",
+            facebook: business?.facebook || "",
+            twitter: business?.twitter || "",
+            logoUrl: business?.logo_url || "",
+            deliveryFee:
+              deliveryFee === ""
+                ? 0
+                : Number(deliveryFee),
+            freeDelivery,
+            freeDeliveryAmount:
+              freeDeliveryAmount === ""
+                ? 0
+                : Number(freeDeliveryAmount),
+            deliveryTime:
+              deliveryTime.trim() ||
+              "1–3 business days"
+          })
+        }
+      );
 
-    setSaved(true);
+      const data = await response.json();
 
-    setTimeout(() => {
-      setSaved(false);
-    }, 2500);
+      if (!response.ok || !data.success) {
+        return;
+      }
+
+      const updatedBusiness = data.business;
+
+      setBusiness(updatedBusiness);
+
+      setFreeDelivery(
+        updatedBusiness.free_delivery === true
+      );
+
+      setDeliveryFee(
+        updatedBusiness.delivery_fee !== null &&
+        updatedBusiness.delivery_fee !== undefined
+          ? String(updatedBusiness.delivery_fee)
+          : ""
+      );
+
+      setFreeDeliveryAmount(
+        updatedBusiness.free_delivery_amount !== null &&
+        updatedBusiness.free_delivery_amount !== undefined
+          ? String(updatedBusiness.free_delivery_amount)
+          : ""
+      );
+
+      setDeliveryTime(
+        updatedBusiness.delivery_time ||
+          "1–3 business days"
+      );
+
+      localStorage.setItem(
+        "branda_business",
+        JSON.stringify(updatedBusiness)
+      );
+
+      setSaved(true);
+
+      setTimeout(() => {
+        setSaved(false);
+      }, 2500);
+    } catch (error) {
+      console.error(
+        "Save delivery settings error:",
+        error
+      );
+    }
   }
 
   return (
@@ -85,7 +180,9 @@ export default function Delivery() {
       <main className="delivery-main">
         <div className="delivery-page-header">
           <div>
-            <p className="delivery-eyebrow">STORE SETTINGS</p>
+            <p className="delivery-eyebrow">
+              STORE SETTINGS
+            </p>
 
             <h1>Delivery</h1>
 
@@ -192,7 +289,9 @@ export default function Delivery() {
                   min="0"
                   value={freeDeliveryAmount}
                   onChange={(event) =>
-                    setFreeDeliveryAmount(event.target.value)
+                    setFreeDeliveryAmount(
+                      event.target.value
+                    )
                   }
                   placeholder="50000"
                 />

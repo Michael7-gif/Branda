@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import "../styles/product-details.css";
+import API_URL from "../services/api";
 
 export default function ProductDetails() {
   const { slug, productId } = useParams();
@@ -59,7 +60,7 @@ export default function ProductDetails() {
     async function loadStore() {
       try {
         const response = await fetch(
-          "http://localhost:5000/api/store/" + slug
+          `${API_URL}/api/store/${encodeURIComponent(slug)}`
         );
 
         if (!response.ok) {
@@ -275,7 +276,7 @@ export default function ProductDetails() {
             to={"/store/" + business.slug}
             className="product-details-back"
           >
-             Back to Store
+            Back to Store
           </Link>
         </div>
       </header>
@@ -454,7 +455,7 @@ export default function ProductDetails() {
                     "/cart"
                   }
                 >
-                  View Cart →
+                  View Cart
                 </Link>
               </div>
             )}

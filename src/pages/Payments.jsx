@@ -1,10 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import "../styles/payments.css";
-
-const API_URL = import.meta.env.DEV
-  ? "http://localhost:5000"
-  : "";
+import API_URL from "../services/api";
 
 export default function Payments() {
   const [banks, setBanks] = useState([]);

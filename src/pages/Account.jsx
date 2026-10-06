@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import "../styles/account.css";
+import API_URL from "../services/api";
 
 export default function Account() {
   const [business, setBusiness] = useState({
@@ -29,7 +30,7 @@ export default function Account() {
     async function loadBusiness() {
       try {
         const response = await fetch(
-          "http://localhost:5000/api/business/me",
+          `${API_URL}/api/business/me`,
           {
             credentials: "include"
           }
@@ -87,7 +88,7 @@ export default function Account() {
 
     try {
       const response = await fetch(
-        "http://localhost:5000/api/business/me",
+        `${API_URL}/api/business/me`,
         {
           method: "PUT",
           headers: {
@@ -128,7 +129,7 @@ export default function Account() {
 
     try {
       const response = await fetch(
-        "http://localhost:5000/api/auth/change-password",
+        `${API_URL}/api/auth/change-password`,
         {
           method: "POST",
           headers: {
@@ -241,7 +242,7 @@ export default function Account() {
 
             <div className="account-field">
               <label htmlFor="address">
-                Business Address 
+                Business Address
               </label>
 
               <input
@@ -381,4 +382,4 @@ export default function Account() {
       </main>
     </div>
   );
-} 
+}

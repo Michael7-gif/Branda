@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../styles/products.css";
+import API_URL from "../services/api";
 
 const CLOUDINARY_CLOUD_NAME =
   import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
@@ -66,7 +67,7 @@ export default function Products() {
   const loadProducts = async () => {
     try {
       const response = await fetch(
-        "http://localhost:5000/api/products",
+        `${API_URL}/api/products`,
         {
           credentials: "include"
         }
@@ -349,8 +350,8 @@ export default function Products() {
       ];
 
       const endpoint = editingProduct
-        ? `http://localhost:5000/api/products/${editingProduct.id}`
-        : "http://localhost:5000/api/products";
+        ? `${API_URL}/api/products/${editingProduct.id}`
+        : `${API_URL}/api/products`;
 
       const response = await fetch(endpoint, {
         method: editingProduct ? "PUT" : "POST",
@@ -433,7 +434,7 @@ export default function Products() {
 
     try {
       const response = await fetch(
-        `http://localhost:5000/api/products/${product.id}`,
+        `${API_URL}/api/products/${product.id}`,
         {
           method: "DELETE",
           credentials: "include"

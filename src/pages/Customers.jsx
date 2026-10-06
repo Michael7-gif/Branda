@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../styles/customers.css";
-
-const API_URL = "http://localhost:5000";
+import API_URL from "../services/api";
 
 function formatMoney(value) {
   return `₦${Number(value || 0).toLocaleString("en-NG", {
@@ -514,6 +513,3 @@ export default function Customers() {
     </main>
   );
 }
-
-
-
