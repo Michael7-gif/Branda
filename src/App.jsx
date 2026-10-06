@@ -1,4 +1,12 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { useEffect, useState } from "react";
+import {
+  BrowserRouter,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -25,10 +33,117 @@ import Checkout from "./pages/Checkout";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import PaymentSuccess from "./pages/PaymentSuccess";
 
+import API_URL from "./services/api";
+
+function SellerRoute({ children }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const [checking, setChecking] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const checkBusiness = async () => {
+      setChecking(true);
+      setError("");
+
+      try {
+        const response = await fetch(`${API_URL}/api/business/me`, {
+          method: "GET",
+          credentials: "include",
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (cancelled) {
+          return;
+        }
+
+        if (response.status === 401) {
+          navigate("/login", {
+            replace: true,
+            state: { from: location.pathname },
+          });
+          return;
+        }
+
+        if (response.status === 404) {
+          navigate("/business-setup", {
+            replace: true,
+            state: { from: location.pathname },
+          });
+          return;
+        }
+
+        if (!response.ok) {
+          setError(
+            data.message ||
+              "Unable to verify your business. Please try again."
+          );
+          setChecking(false);
+          return;
+        }
+
+        setChecking(false);
+      } catch (requestError) {
+        console.error(requestError);
+
+        if (!cancelled) {
+          setError(
+            "Unable to connect to Branda. Please check your connection and try again."
+          );
+          setChecking(false);
+        }
+      }
+    };
+
+    checkBusiness();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [location.pathname, navigate]);
+
+  if (checking) {
+    return null;
+  }
+
+  if (error) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "24px",
+          textAlign: "center",
+        }}
+      >
+        <div>
+          <p>{error}</p>
+
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+          >
+            Try again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return children;
+}
+
 function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Public pages */}
         <Route path="/" element={<Home />} />
 
         <Route path="/login" element={<Login />} />
@@ -50,56 +165,95 @@ function App() {
           element={<ResetPassword />}
         />
 
-        <Route
-          path="/dashboard"
-          element={<Dashboard />}
-        />
-
-        <Route
-          path="/dashboard/products"
-          element={<Products />}
-        />
-
-        <Route
-          path="/dashboard/orders"
-          element={<Orders />}
-        />
-
-        <Route
-          path="/dashboard/customers"
-          element={<Customers />}
-        />
-
-        <Route
-          path="/dashboard/store"
-          element={<Store />}
-        />
-
-        <Route
-          path="/dashboard/delivery"
-          element={<Delivery />}
-        />
-
-        <Route
-          path="/dashboard/payments"
-          element={<Payments />}
-        />
-
-        <Route
-          path="/dashboard/analytics"
-          element={<Analytics />}
-        />
-
-        <Route
-          path="/dashboard/account"
-          element={<Account />}
-        />
-
+        {/* Business registration */}
         <Route
           path="/business-setup"
           element={<BusinessSetup />}
         />
 
+        {/* Protected seller pages */}
+        <Route
+          path="/dashboard"
+          element={
+            <SellerRoute>
+              <Dashboard />
+            </SellerRoute>
+          }
+        />
+
+        <Route
+          path="/dashboard/products"
+          element={
+            <SellerRoute>
+              <Products />
+            </SellerRoute>
+          }
+        />
+
+        <Route
+          path="/dashboard/orders"
+          element={
+            <SellerRoute>
+              <Orders />
+            </SellerRoute>
+          }
+        />
+
+        <Route
+          path="/dashboard/customers"
+          element={
+            <SellerRoute>
+              <Customers />
+            </SellerRoute>
+          }
+        />
+
+        <Route
+          path="/dashboard/store"
+          element={
+            <SellerRoute>
+              <Store />
+            </SellerRoute>
+          }
+        />
+
+        <Route
+          path="/dashboard/delivery"
+          element={
+            <SellerRoute>
+              <Delivery />
+            </SellerRoute>
+          }
+        />
+
+        <Route
+          path="/dashboard/payments"
+          element={
+            <SellerRoute>
+              <Payments />
+            </SellerRoute>
+          }
+        />
+
+        <Route
+          path="/dashboard/analytics"
+          element={
+            <SellerRoute>
+              <Analytics />
+            </SellerRoute>
+          }
+        />
+
+        <Route
+          path="/dashboard/account"
+          element={
+            <SellerRoute>
+              <Account />
+            </SellerRoute>
+          }
+        />
+
+        {/* Public storefront */}
         <Route
           path="/store/:slug"
           element={<Storefront />}
@@ -148,6 +302,12 @@ function App() {
         <Route
           path="/order-confirmation"
           element={<OrderConfirmation />}
+        />
+
+        {/* Unknown URL */}
+        <Route
+          path="*"
+          element={<Navigate to="/" replace />}
         />
       </Routes>
     </BrowserRouter>

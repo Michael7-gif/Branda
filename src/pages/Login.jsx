@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../styles/login.css";
 import API_URL from "../services/api";
+
 export default function Login() {
   const navigate = useNavigate();
 
@@ -32,7 +33,8 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/auth/login`, {
+      // Step 1: Sign in
+      const loginResponse = await fetch(`${API_URL}/api/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -41,14 +43,46 @@ export default function Login() {
         body: JSON.stringify(formData),
       });
 
-      const data = await response.json();
+      const loginData = await loginResponse.json();
 
-      if (!response.ok) {
-        setError(data.message || "Unable to sign in.");
+      if (!loginResponse.ok) {
+        setError(loginData.message || "Unable to sign in.");
         return;
       }
 
-      navigate("/dashboard");
+      // Step 2: Check whether this account has a registered business
+      const businessResponse = await fetch(`${API_URL}/api/business/me`, {
+        method: "GET",
+        credentials: "include",
+      });
+
+      const businessData = await businessResponse.json().catch(() => ({}));
+
+      // User is signed in but has not registered a business yet
+      if (businessResponse.status === 404) {
+        navigate("/business-setup", { replace: true });
+        return;
+      }
+
+      // Session was not accepted
+      if (businessResponse.status === 401) {
+        setError(
+          "Your session could not be verified. Please sign in again."
+        );
+        return;
+      }
+
+      // Backend returned another error
+      if (!businessResponse.ok) {
+        setError(
+          businessData.message ||
+            "Unable to verify your business. Please try again."
+        );
+        return;
+      }
+
+      // Business exists
+      navigate("/dashboard", { replace: true });
     } catch (requestError) {
       console.error(requestError);
 
@@ -128,8 +162,12 @@ export default function Login() {
 
               <button
                 type="button"
-                onClick={() => setShowPassword((current) => !current)}
-                aria-label={showPassword ? "Hide password" : "Show password"}
+                onClick={() =>
+                  setShowPassword((current) => !current)
+                }
+                aria-label={
+                  showPassword ? "Hide password" : "Show password"
+                }
               >
                 {showPassword ? "Hide" : "Show"}
               </button>
@@ -149,6 +187,3 @@ export default function Login() {
     </div>
   );
 }
-
-
-

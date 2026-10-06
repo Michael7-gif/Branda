@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../styles/store.css";
 import API_URL from "../services/api";
@@ -74,7 +74,23 @@ function normalizeBusiness(data) {
     slug:
       business.slug ||
       business.business_slug ||
-      ""
+      "",
+
+    deliveryFee:
+      business.deliveryFee ??
+      business.delivery_fee ??
+      0,
+
+    freeDelivery:
+      business.freeDelivery ??
+      business.free_delivery ??
+      false,
+
+    freeDeliveryAmount:
+      business.freeDeliveryAmount ??
+      business.free_delivery_amount ??
+      0
+
   };
 }
 
@@ -91,7 +107,17 @@ function createFormFromBusiness(business) {
     instagram: normalized?.instagram || "",
     facebook: normalized?.facebook || "",
     twitter: normalized?.twitter || "",
-    logoUrl: normalized?.logoUrl || ""
+    logoUrl: normalized?.logoUrl || "",
+
+    deliveryFee:
+      normalized?.deliveryFee ?? 0,
+
+    freeDelivery:
+      Boolean(normalized?.freeDelivery),
+
+    freeDeliveryAmount:
+      normalized?.freeDeliveryAmount ?? 0
+
   };
 }
 
@@ -338,7 +364,25 @@ export default function Store() {
               form.twitter.trim(),
 
             logoUrl:
-              form.logoUrl
+              form.logoUrl,
+
+            deliveryFee:
+              Number.isFinite(
+                Number(form.deliveryFee)
+              )
+                ? Number(form.deliveryFee)
+                : 0,
+
+            freeDelivery:
+              Boolean(form.freeDelivery),
+
+            freeDeliveryAmount:
+              Number.isFinite(
+                Number(form.freeDeliveryAmount)
+              )
+                ? Number(form.freeDeliveryAmount)
+                : 0
+
           })
         }
       );
@@ -749,7 +793,7 @@ export default function Store() {
                 }}
                 aria-label="Close"
               >
-                ×
+                Ã—
               </button>
             </div>
 
