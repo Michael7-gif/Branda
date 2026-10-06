@@ -285,8 +285,7 @@ export default function Checkout() {
 
       if (!response.ok) {
         setError(
-          data.message ||
-            "Unable to start payment."
+          data.message || "Unable to start payment."
         );
         return;
       }
@@ -328,6 +327,26 @@ export default function Checkout() {
     }
   }
 
+  function normalizeWhatsAppNumber(value) {
+    // Remove @, spaces, brackets, dashes, plus signs,
+    // letters and every other non-numeric character.
+    let number = String(value || "").replace(/\D/g, "");
+
+    // Convert Nigerian local format:
+    // 08012345678 -> 2348012345678
+    if (number.startsWith("0")) {
+      number = `234${number.slice(1)}`;
+    }
+
+    // If the number was already entered with Nigeria's
+    // country code, keep it unchanged.
+    if (number.startsWith("234")) {
+      return number;
+    }
+
+    return "";
+  }
+
   function handleWhatsAppOrder() {
     setError("");
 
@@ -341,7 +360,7 @@ export default function Checkout() {
       business?.whatsapp_number ||
       "";
 
-    if (!whatsappNumber.trim()) {
+    if (!String(whatsappNumber).trim()) {
       setError(
         "This store has not added a WhatsApp number yet. Please choose Pay Online."
       );
@@ -350,9 +369,20 @@ export default function Checkout() {
 
     setWhatsappProcessing(true);
 
-    const cleanNumber = whatsappNumber.replace(/\D/g, "");
+    const cleanNumber =
+      normalizeWhatsAppNumber(whatsappNumber);
 
     if (!cleanNumber) {
+      setError(
+        "The store's WhatsApp number is not valid. Please choose Pay Online."
+      );
+      setWhatsappProcessing(false);
+      return;
+    }
+
+    // Nigerian international WhatsApp numbers should
+    // contain 13 digits including 234.
+    if (cleanNumber.length !== 13) {
       setError(
         "The store's WhatsApp number is not valid. Please choose Pay Online."
       );
@@ -370,13 +400,17 @@ export default function Checkout() {
           `Product: ${item.name}`,
           `Quantity: ${quantity}`,
           `Unit price: ${formatPrice(unitPrice)}`,
-          `Subtotal: ${formatPrice(itemSubtotal)}`
+          `Subtotal: ${formatPrice(itemSubtotal)}`,
         ].join("\n");
       })
       .join("\n\n");
 
     const message = [
-      `Hello ${business?.business_name || business?.businessName || "Seller"},`,
+      `Hello ${
+        business?.business_name ||
+        business?.businessName ||
+        "Seller"
+      },`,
       "",
       "I would like to place an order from your Branda store.",
       "",
@@ -398,9 +432,9 @@ export default function Checkout() {
       "Please let me know how I should complete the payment.",
     ].join("\n");
 
-    const whatsappUrl = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(
-      message
-    )}`;
+    const whatsappUrl =
+      `https://wa.me/${cleanNumber}` +
+      `?text=${encodeURIComponent(message)}`;
 
     window.open(
       whatsappUrl,
@@ -664,7 +698,9 @@ export default function Checkout() {
                       Order via WhatsApp
                     </strong>
                     <small>
-                      Send your order to the seller on WhatsApp and arrange payment directly.
+                      Send your order to the seller
+                      on WhatsApp and arrange
+                      payment directly.
                     </small>
                   </span>
                 </label>
@@ -737,7 +773,9 @@ export default function Checkout() {
                   <strong>
                     {formatPrice(
                       getItemPrice(item) *
-                        Number(item.quantity || 1)
+                        Number(
+                          item.quantity || 1
+                        )
                     )}
                   </strong>
                 </div>
