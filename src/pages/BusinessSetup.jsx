@@ -274,7 +274,7 @@ export default function BusinessSetup() {
                     type="tel"
                     value={form.phone}
                     onChange={handleChange}
-                    placeholder="08012345678"
+                    placeholder=""
                     required
                   />
                 </div>
@@ -293,7 +293,7 @@ export default function BusinessSetup() {
                     type="email"
                     value={form.email}
                     onChange={handleChange}
-                    placeholder="hello@yourbusiness.com"
+                    placeholder=""
                     required
                   />
                 </div>
@@ -330,7 +330,7 @@ export default function BusinessSetup() {
                     type="tel"
                     value={form.whatsapp}
                     onChange={handleChange}
-                    placeholder="08012345678"
+                    placeholder=""
                     required
                   />
                 </div>
@@ -366,7 +366,7 @@ export default function BusinessSetup() {
                     type="text"
                     value={form.instagram}
                     onChange={handleChange}
-                    placeholder="@yourbusiness"
+                    placeholder=""
                   />
                 </div>
 
@@ -384,7 +384,7 @@ export default function BusinessSetup() {
                     type="text"
                     value={form.facebook}
                     onChange={handleChange}
-                    placeholder="facebook.com/yourbusiness"
+                    placeholder=""
                   />
                 </div>
 
@@ -402,7 +402,7 @@ export default function BusinessSetup() {
                     type="text"
                     value={form.twitter}
                     onChange={handleChange}
-                    placeholder="@yourbusiness"
+                    placeholder=""
                   />
                 </div>
 
@@ -420,7 +420,7 @@ export default function BusinessSetup() {
                     type="text"
                     value={form.tiktok}
                     onChange={handleChange}
-                    placeholder="@yourbusiness"
+                    placeholder=""
                   />
                 </div>
               </div>
