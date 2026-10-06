@@ -486,7 +486,7 @@ export default function Storefront() {
 
         <p>
           © {new Date().getFullYear()}{" "}
-          {business.business_name}. Powered by Branda.
+          {business.business_name}. Powered by M1ckel.
         </p>
       </footer>
     </div>

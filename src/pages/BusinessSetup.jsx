@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/business-setup.css";
 import API_URL from "../services/api";
+
 export default function BusinessSetup() {
   const navigate = useNavigate();
 
@@ -60,7 +61,10 @@ export default function BusinessSetup() {
 
       const image = await new Promise((resolve, reject) => {
         reader.onload = () => resolve(reader.result);
-        reader.onerror = () => reject(new Error("Unable to read the selected image."));
+        reader.onerror = () =>
+          reject(
+            new Error("Unable to read the selected image.")
+          );
         reader.readAsDataURL(file);
       });
 
@@ -91,8 +95,13 @@ export default function BusinessSetup() {
         logoUrl: data.image.url,
       }));
     } catch (requestError) {
-      setError(requestError.message || "Unable to upload your business logo.");
+      setError(
+        requestError.message ||
+          "Unable to upload your business logo."
+      );
+
       setLogoPreview("");
+
       setForm((current) => ({
         ...current,
         logoUrl: "",
@@ -131,17 +140,14 @@ export default function BusinessSetup() {
     setLoading(true);
 
     try {
-      const response = await 
-        fetch(`${API_URL}/api/business`, 
-            {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify(form),
-        }
-      );
+      const response = await fetch(`${API_URL}/api/business`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(form),
+      });
 
       const data = await response.json();
 
@@ -160,7 +166,10 @@ export default function BusinessSetup() {
 
       navigate("/dashboard");
     } catch (requestError) {
-      setError(requestError.message);
+      setError(
+        requestError.message ||
+          "Unable to create your business."
+      );
     } finally {
       setLoading(false);
     }
@@ -171,29 +180,13 @@ export default function BusinessSetup() {
       <div className="business-setup-container">
         <header className="business-setup-header">
           <div className="business-setup-brand">
-            <span className="business-setup-brand-mark">
-              B
-            </span>
-
             <span>Branda</span>
           </div>
 
           <div className="business-setup-header-right">
             <div className="business-setup-progress">
-              <span className="business-setup-progress-number">
-                01
-              </span>
-
               <span>Business setup</span>
             </div>
-
-            <button
-              type="button"
-              className="business-setup-dashboard-button"
-              onClick={() => navigate("/dashboard")}
-            >
-              Dashboard
-            </button>
           </div>
         </header>
 
@@ -218,8 +211,6 @@ export default function BusinessSetup() {
             <section className="business-setup-section">
               <div className="business-setup-section-heading">
                 <div>
-                  <span>01</span>
-
                   <div>
                     <h2>Business information</h2>
 
@@ -246,7 +237,7 @@ export default function BusinessSetup() {
                     type="text"
                     value={form.businessName}
                     onChange={handleChange}
-                    placeholder="e.g. M1ckel App Store"
+                    placeholder="Enter your business name"
                     required
                   />
                 </div>
@@ -264,7 +255,7 @@ export default function BusinessSetup() {
                     name="description"
                     value={form.description}
                     onChange={handleChange}
-                    placeholder="Tell customers a little about your business..."
+                    placeholder=""
                     rows="5"
                   />
                 </div>
@@ -284,7 +275,6 @@ export default function BusinessSetup() {
                     value={form.phone}
                     onChange={handleChange}
                     placeholder="08012345678"
-                  
                     required
                   />
                 </div>
@@ -350,8 +340,6 @@ export default function BusinessSetup() {
             <section className="business-setup-section">
               <div className="business-setup-section-heading">
                 <div>
-                  <span>02</span>
-
                   <div>
                     <h2>Social media</h2>
 
@@ -441,8 +429,6 @@ export default function BusinessSetup() {
             <section className="business-setup-section">
               <div className="business-setup-section-heading">
                 <div>
-                  <span>03</span>
-
                   <div>
                     <h2>Business logo</h2>
 
@@ -516,7 +502,7 @@ export default function BusinessSetup() {
               <button
                 type="submit"
                 className="business-setup-submit"
-                disabled={loading}
+                disabled={loading || uploadingLogo}
               >
                 {loading
                   ? "Creating business..."
