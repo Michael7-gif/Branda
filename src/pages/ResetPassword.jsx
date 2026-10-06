@@ -2,16 +2,21 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../styles/reset-password.css";
 import API_URL from "../services/api";
+
 export default function ResetPassword() {
   const navigate = useNavigate();
 
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] =
+    useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const [showPassword, setShowPassword] =
+    useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] =
+    useState(false);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -34,28 +39,37 @@ export default function ResetPassword() {
     setLoading(true);
 
     try {
-      const response = await fetch( `${API_URL}/api/auth/reset-password` ,
+      const response = await fetch(
+        `${API_URL}/api/auth/reset-password`,
         {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type": "application/json"
           },
           credentials: "include",
           body: JSON.stringify({
             password,
-            confirmPassword,
-          }),
+            confirmPassword
+          })
         }
       );
 
       const data = await response.json();
 
-      console.log("Reset password status:", response.status);
-      console.log("Reset password response:", data);
+      console.log(
+        "Reset password status:",
+        response.status
+      );
+
+      console.log(
+        "Reset password response:",
+        data
+      );
 
       if (!response.ok) {
         setError(
-          data.message || "Unable to reset your password."
+          data.message ||
+            "Unable to reset your password."
         );
         return;
       }
@@ -64,7 +78,9 @@ export default function ResetPassword() {
         "Your password has been reset successfully. Redirecting you to sign in..."
       );
 
-      localStorage.removeItem("branda_reset_email");
+      localStorage.removeItem(
+        "branda_reset_email"
+      );
 
       setTimeout(() => {
         navigate("/login");
@@ -86,13 +102,18 @@ export default function ResetPassword() {
   return (
     <div className="reset-password-page">
       <header className="reset-password-header">
-        <Link to="/" className="reset-password-logo">
+        <Link
+          to="/"
+          className="reset-password-logo"
+        >
           Branda
         </Link>
 
         <p>
           Remember your password?{" "}
-          <Link to="/login">Sign in</Link>
+          <Link to="/login">
+            Sign in
+          </Link>
         </p>
       </header>
 
@@ -102,11 +123,14 @@ export default function ResetPassword() {
             CREATE NEW PASSWORD
           </p>
 
-          <h1>Create a new password.</h1>
+          <h1>
+            Create a new password.
+          </h1>
 
           <p>
-            Your verification code has been confirmed. Choose
-            a new password for your Branda account.
+            Your verification code has been confirmed.
+            Choose a new password for your Branda
+            account.
           </p>
         </section>
 
@@ -115,7 +139,8 @@ export default function ResetPassword() {
             <h2>New password</h2>
 
             <p>
-              Create a strong password for your Branda account.
+              Create a strong password for your
+              Branda account.
             </p>
           </div>
 
@@ -137,26 +162,45 @@ export default function ResetPassword() {
                 New password
               </label>
 
-              <input
-                id="password"
-                name="password"
-                type="password"
-                placeholder="Enter your new password"
-                value={password}
-                onChange={(event) => {
-                  setPassword(event.target.value);
-                  setError("");
-                }}
-                required
-              /> 
+              <div className="reset-password-input-wrapper">
+                <input
+                  id="password"
+                  name="password"
+                  type={
+                    showPassword
+                      ? "text"
+                      : "password"
+                  }
+                  placeholder="Enter your new password"
+                  value={password}
+                  onChange={(event) => {
+                    setPassword(
+                      event.target.value
+                    );
+                    setError("");
+                  }}
+                  required
+                />
 
-               <button
-                 type="button"
-                 onClick={() => setShowPassword((current) => !current)}
-                 aria-label={showPassword ? "Hide password" : "Show password"}
-               >
-                 {showPassword ? "Hide" : "Show"}
-               </button>
+                <button
+                  type="button"
+                  className="reset-password-password-toggle"
+                  onClick={() =>
+                    setShowPassword(
+                      (current) => !current
+                    )
+                  }
+                  aria-label={
+                    showPassword
+                      ? "Hide password"
+                      : "Show password"
+                  }
+                >
+                  {showPassword
+                    ? "Hide"
+                    : "Show"}
+                </button>
+              </div>
             </div>
 
             <div className="reset-password-form-group">
@@ -164,29 +208,51 @@ export default function ResetPassword() {
                 Confirm new password
               </label>
 
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                placeholder="Confirm your new password"
-                value={confirmPassword}
-                onChange={(event) => {
-                  setConfirmPassword(event.target.value);
-                  setError("");
-                }}
-                required
-              /> 
+              <div className="reset-password-input-wrapper">
+                <input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type={
+                    showConfirmPassword
+                      ? "text"
+                      : "password"
+                  }
+                  placeholder="Confirm your new password"
+                  value={confirmPassword}
+                  onChange={(event) => {
+                    setConfirmPassword(
+                      event.target.value
+                    );
+                    setError("");
+                  }}
+                  required
+                />
 
-               <button
-                 type="button"
-                 onClick={() => setShowConfirmPassword((current) => !current)}
-                 aria-label={showConfirmPassword ? "Hide password" : "Show password"}
-               >
-                 {showConfirmPassword ? "Hide" : "Show"}
-               </button>
+                <button
+                  type="button"
+                  className="reset-password-password-toggle"
+                  onClick={() =>
+                    setShowConfirmPassword(
+                      (current) => !current
+                    )
+                  }
+                  aria-label={
+                    showConfirmPassword
+                      ? "Hide password"
+                      : "Show password"
+                  }
+                >
+                  {showConfirmPassword
+                    ? "Hide"
+                    : "Show"}
+                </button>
+              </div>
             </div>
 
-            <button type="submit" disabled={loading}>
+            <button
+              type="submit"
+              disabled={loading}
+            >
               {loading
                 ? "Resetting password..."
                 : "Reset password"}
@@ -194,7 +260,8 @@ export default function ResetPassword() {
           </form>
 
           <p className="reset-password-info">
-            Your password must be at least 8 characters long.
+            Your password must be at least 8
+            characters long.
           </p>
 
           <p className="reset-password-bottom-text">

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../styles/signup.css";
 import API_URL from "../services/api";
+
 export default function Signup() {
   const navigate = useNavigate();
 
@@ -55,11 +56,10 @@ export default function Signup() {
         body: JSON.stringify(formData),
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
         setError(data.message || "Unable to create your account.");
-        setLoading(false);
         return;
       }
 
@@ -102,7 +102,9 @@ export default function Signup() {
         <section className="signup-card">
           <div className="signup-card-heading">
             <h2>Create your account</h2>
-            <p>Your account will be used to manage your Branda business.</p>
+            <p>
+              Your account will be used to manage your Branda business.
+            </p>
           </div>
 
           {error && <div className="signup-error">{error}</div>}
@@ -139,49 +141,65 @@ export default function Signup() {
             <div className="signup-form-group">
               <label htmlFor="password">Password</label>
 
-              <input
-                id="password"
-                name="password"
-                type={showPassword ? "text" : "password"}
-                placeholder="Create a password"
-                value={formData.password}
-                onChange={handleChange}
-                minLength="8"
-                required
-              />
+              <div className="signup-password-input-wrapper">
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Create a password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  minLength="8"
+                  required
+                />
+
+                <button
+                  type="button"
+                  className="signup-password-toggle"
+                  onClick={() =>
+                    setShowPassword((current) => !current)
+                  }
+                  aria-label={
+                    showPassword ? "Hide password" : "Show password"
+                  }
+                >
+                  {showPassword ? "Hide" : "Seek"}
+                </button>
+              </div>
 
               <small>Use at least 8 characters.</small>
-
-              <button
-                type="button"
-                onClick={() => setShowPassword((current) => !current)}
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? "Hide" : "Show"}
-              </button>
             </div>
 
             <div className="signup-form-group">
               <label htmlFor="confirmPassword">Confirm password</label>
 
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type={showConfirmPassword ? "text" : "password"}
-                placeholder="Enter your password again"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                minLength="8"
-                required
-              />
- 
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword((current) => !current)}
-                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
-              >
-                {showConfirmPassword ? "Hide" : "Show"}
-              </button>
+              <div className="signup-password-input-wrapper">
+                <input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="Enter your password again"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  minLength="8"
+                  required
+                />
+
+                <button
+                  type="button"
+                  className="signup-password-toggle"
+                  onClick={() =>
+                    setShowConfirmPassword((current) => !current)
+                  }
+                  aria-label={
+                    showConfirmPassword
+                      ? "Hide password"
+                      : "Show password"
+                  }
+                >
+                  {showConfirmPassword ? "Hide" : "Seek"}
+                </button>
+              </div>
             </div>
 
             <button type="submit" disabled={loading}>

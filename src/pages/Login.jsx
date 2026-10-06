@@ -33,7 +33,6 @@ export default function Login() {
     setLoading(true);
 
     try {
-      // Step 1: Sign in
       const loginResponse = await fetch(`${API_URL}/api/auth/login`, {
         method: "POST",
         headers: {
@@ -43,14 +42,13 @@ export default function Login() {
         body: JSON.stringify(formData),
       });
 
-      const loginData = await loginResponse.json();
+      const loginData = await loginResponse.json().catch(() => ({}));
 
       if (!loginResponse.ok) {
         setError(loginData.message || "Unable to sign in.");
         return;
       }
 
-      // Step 2: Check whether this account has a registered business
       const businessResponse = await fetch(`${API_URL}/api/business/me`, {
         method: "GET",
         credentials: "include",
@@ -58,13 +56,11 @@ export default function Login() {
 
       const businessData = await businessResponse.json().catch(() => ({}));
 
-      // User is signed in but has not registered a business yet
       if (businessResponse.status === 404) {
         navigate("/business-setup", { replace: true });
         return;
       }
 
-      // Session was not accepted
       if (businessResponse.status === 401) {
         setError(
           "Your session could not be verified. Please sign in again."
@@ -72,7 +68,6 @@ export default function Login() {
         return;
       }
 
-      // Backend returned another error
       if (!businessResponse.ok) {
         setError(
           businessData.message ||
@@ -81,7 +76,6 @@ export default function Login() {
         return;
       }
 
-      // Business exists
       navigate("/dashboard", { replace: true });
     } catch (requestError) {
       console.error(requestError);
@@ -150,27 +144,30 @@ export default function Login() {
                 </Link>
               </div>
 
-              <input
-                id="password"
-                name="password"
-                type={showPassword ? "text" : "password"}
-                placeholder="Enter your password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-              />
+              <div className="login-password-input-wrapper">
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                />
 
-              <button
-                type="button"
-                onClick={() =>
-                  setShowPassword((current) => !current)
-                }
-                aria-label={
-                  showPassword ? "Hide password" : "Show password"
-                }
-              >
-                {showPassword ? "Hide" : "Show"}
-              </button>
+                <button
+                  type="button"
+                  className="login-password-toggle"
+                  onClick={() =>
+                    setShowPassword((current) => !current)
+                  }
+                  aria-label={
+                    showPassword ? "Hide password" : "Show password"
+                  }
+                >
+                  {showPassword ? "Hide" : "Seek"}
+                </button>
+              </div>
             </div>
 
             <button type="submit" disabled={loading}>

@@ -4,7 +4,8 @@ const axios = require("axios");
 const router = express.Router();
 
 const paystackHeaders = {
-  Authorization: "Bearer " + process.env.PAYSTACK_SECRET_KEY,
+  Authorization:
+    "Bearer " + process.env.PAYSTACK_SECRET_KEY,
   "Content-Type": "application/json",
 };
 
@@ -69,7 +70,9 @@ const createPaystackSubaccount = async ({
   return subaccountCode;
 };
 
-const checkPaystackSubaccount = async (subaccountCode) => {
+const checkPaystackSubaccount = async (
+  subaccountCode
+) => {
   try {
     const response = await axios.get(
       `https://api.paystack.co/subaccount/${encodeURIComponent(
@@ -95,7 +98,8 @@ router.get("/banks", async (req, res) => {
     if (!process.env.PAYSTACK_SECRET_KEY) {
       return res.status(500).json({
         success: false,
-        message: "Paystack is not configured on the server.",
+        message:
+          "Paystack is not configured on the server.",
       });
     }
 
@@ -132,19 +136,24 @@ router.post("/account/verify", async (req, res) => {
       });
     }
 
-    const { accountNumber, bankCode } = req.body;
+    const {
+      accountNumber,
+      bankCode,
+    } = req.body;
 
     if (!accountNumber || !bankCode) {
       return res.status(400).json({
         success: false,
-        message: "Bank and account number are required.",
+        message:
+          "Bank and account number are required.",
       });
     }
 
     if (!/^\d{10}$/.test(String(accountNumber))) {
       return res.status(400).json({
         success: false,
-        message: "Account number must contain exactly 10 digits.",
+        message:
+          "Account number must contain exactly 10 digits.",
       });
     }
 
@@ -165,7 +174,8 @@ router.post("/account/verify", async (req, res) => {
       success: true,
       account: {
         accountNumber:
-          account.account_number || accountNumber,
+          account.account_number ||
+          accountNumber,
         accountName: account.account_name,
       },
     });
@@ -208,18 +218,21 @@ router.post("/account", async (req, res) => {
     ) {
       return res.status(400).json({
         success: false,
-        message: "All payment account information is required.",
+        message:
+          "All payment account information is required.",
       });
     }
 
     if (!/^\d{10}$/.test(String(accountNumber))) {
       return res.status(400).json({
         success: false,
-        message: "Account number must contain exactly 10 digits.",
+        message:
+          "Account number must contain exactly 10 digits.",
       });
     }
 
-    const business = await getBusinessForUser(req);
+    const business =
+      await getBusinessForUser(req);
 
     if (!business) {
       return res.status(404).json({
@@ -239,12 +252,14 @@ router.post("/account", async (req, res) => {
       }
     );
 
-    const verifiedAccount = verifyResponse.data.data;
+    const verifiedAccount =
+      verifyResponse.data.data;
 
     if (!verifiedAccount?.account_name) {
       return res.status(400).json({
         success: false,
-        message: "Paystack could not verify this bank account.",
+        message:
+          "Paystack could not verify this bank account.",
       });
     }
 
@@ -252,11 +267,14 @@ router.post("/account", async (req, res) => {
       verifiedAccount.account_name.trim();
 
     let subaccountCode =
-      business.paystack_subaccount_code || null;
+      business.paystack_subaccount_code ||
+      null;
 
     if (subaccountCode) {
       const existingSubaccount =
-        await checkPaystackSubaccount(subaccountCode);
+        await checkPaystackSubaccount(
+          subaccountCode
+        );
 
       if (!existingSubaccount) {
         subaccountCode = null;
@@ -265,7 +283,8 @@ router.post("/account", async (req, res) => {
 
     if (subaccountCode) {
       const subaccountData = {
-        business_name: business.business_name,
+        business_name:
+          business.business_name,
         settlement_bank: bankCode,
         account_number: accountNumber,
         percentage_charge: 0,
@@ -276,7 +295,8 @@ router.post("/account", async (req, res) => {
           business.email || undefined,
         primary_contact_phone:
           business.phone || undefined,
-        primary_contact_name: verifiedAccountName,
+        primary_contact_name:
+          verifiedAccountName,
         active: true,
       };
 
@@ -291,7 +311,8 @@ router.post("/account", async (req, res) => {
       );
 
       subaccountCode =
-        response.data.data?.subaccount_code ||
+        response.data.data
+          ?.subaccount_code ||
         subaccountCode;
     } else {
       subaccountCode =
@@ -299,7 +320,8 @@ router.post("/account", async (req, res) => {
           business,
           bankCode,
           accountNumber,
-          accountName: verifiedAccountName,
+          accountName:
+            verifiedAccountName,
         });
     }
 
@@ -333,13 +355,16 @@ router.post("/account", async (req, res) => {
 
     res.json({
       success: true,
-      message: "Payment account connected successfully.",
-      paymentAccount: updatedBusiness.rows[0],
+      message:
+        "Payment account connected successfully.",
+      paymentAccount:
+        updatedBusiness.rows[0],
     });
   } catch (error) {
     console.error(
       "Save payment account error:",
-      error.response?.data || error.message
+      error.response?.data ||
+        error.message
     );
 
     res.status(400).json({
@@ -361,17 +386,18 @@ router.get("/account", async (req, res) => {
       });
     }
 
-    const result = await req.app.locals.pool.query(
-      `SELECT
-        payment_bank_name,
-        payment_bank_code,
-        payment_account_name,
-        payment_account_number,
-        paystack_subaccount_code
-       FROM businesses
-       WHERE user_id = $1`,
-      [req.session.userId]
-    );
+    const result =
+      await req.app.locals.pool.query(
+        `SELECT
+          payment_bank_name,
+          payment_bank_code,
+          payment_account_name,
+          payment_account_number,
+          paystack_subaccount_code
+         FROM businesses
+         WHERE user_id = $1`,
+        [req.session.userId]
+      );
 
     if (result.rows.length === 0) {
       return res.status(404).json({
@@ -382,7 +408,8 @@ router.get("/account", async (req, res) => {
 
     res.json({
       success: true,
-      paymentAccount: result.rows[0],
+      paymentAccount:
+        result.rows[0],
     });
   } catch (error) {
     console.error(
@@ -392,7 +419,8 @@ router.get("/account", async (req, res) => {
 
     res.status(500).json({
       success: false,
-      message: "Unable to load payment account.",
+      message:
+        "Unable to load payment account.",
     });
   }
 });
@@ -408,12 +436,13 @@ router.get("/history", async (req, res) => {
 
     const pool = req.app.locals.pool;
 
-    const businessResult = await pool.query(
-      `SELECT id
-       FROM businesses
-       WHERE user_id = $1`,
-      [req.session.userId]
-    );
+    const businessResult =
+      await pool.query(
+        `SELECT id
+         FROM businesses
+         WHERE user_id = $1`,
+        [req.session.userId]
+      );
 
     if (businessResult.rows.length === 0) {
       return res.status(404).json({
@@ -422,7 +451,8 @@ router.get("/history", async (req, res) => {
       });
     }
 
-    const businessId = businessResult.rows[0].id;
+    const businessId =
+      businessResult.rows[0].id;
 
     const result = await pool.query(
       `SELECT
@@ -442,61 +472,81 @@ router.get("/history", async (req, res) => {
       [businessId]
     );
 
-    const payments = result.rows.map((payment) => ({
-      id: payment.id,
-      orderNumber: payment.order_number,
-      customerName: payment.customer_name,
-      customerPhone: payment.customer_phone,
-      amount: Number(payment.total_amount),
-      paymentStatus: payment.payment_status,
-      paymentReference: payment.payment_reference,
-      orderStatus: payment.status,
-      createdAt: payment.created_at,
-    }));
-
-    const successfulPayments = payments.filter(
-      (payment) =>
-        payment.paymentStatus === "paid"
+    const payments = result.rows.map(
+      (payment) => ({
+        id: payment.id,
+        orderNumber:
+          payment.order_number,
+        customerName:
+          payment.customer_name,
+        customerPhone:
+          payment.customer_phone,
+        amount:
+          Number(payment.total_amount),
+        paymentStatus:
+          payment.payment_status,
+        paymentReference:
+          payment.payment_reference,
+        orderStatus:
+          payment.status,
+        createdAt:
+          payment.created_at,
+      })
     );
 
-    const totalPayments = successfulPayments.reduce(
-      (total, payment) =>
-        total + Number(payment.amount || 0),
-      0
-    );
+    const successfulPayments =
+      payments.filter(
+        (payment) =>
+          payment.paymentStatus ===
+          "paid"
+      );
+
+    const totalPayments =
+      successfulPayments.reduce(
+        (total, payment) =>
+          total +
+          Number(payment.amount || 0),
+        0
+      );
 
     const currentDate = new Date();
 
-    const monthPayments = successfulPayments.filter(
-      (payment) => {
-        const paymentDate =
-          new Date(payment.createdAt);
+    const monthPayments =
+      successfulPayments.filter(
+        (payment) => {
+          const paymentDate =
+            new Date(payment.createdAt);
 
-        return (
-          paymentDate.getMonth() ===
-            currentDate.getMonth() &&
-          paymentDate.getFullYear() ===
-            currentDate.getFullYear()
-        );
-      }
-    );
+          return (
+            paymentDate.getMonth() ===
+              currentDate.getMonth() &&
+            paymentDate.getFullYear() ===
+              currentDate.getFullYear()
+          );
+        }
+      );
 
-    const thisMonth = monthPayments.reduce(
-      (total, payment) =>
-        total + Number(payment.amount || 0),
-      0
-    );
+    const thisMonth =
+      monthPayments.reduce(
+        (total, payment) =>
+          total +
+          Number(payment.amount || 0),
+        0
+      );
 
     res.json({
       success: true,
       payments,
       summary: {
         totalPayments,
-        successfulCount: successfulPayments.length,
-        pendingCount: payments.filter(
-          (payment) =>
-            payment.paymentStatus !== "paid"
-        ).length,
+        successfulCount:
+          successfulPayments.length,
+        pendingCount:
+          payments.filter(
+            (payment) =>
+              payment.paymentStatus !==
+              "paid"
+          ).length,
         thisMonth,
       },
     });
@@ -508,7 +558,8 @@ router.get("/history", async (req, res) => {
 
     res.status(500).json({
       success: false,
-      message: "Unable to load payment history.",
+      message:
+        "Unable to load payment history.",
     });
   }
 });
@@ -518,7 +569,8 @@ router.post("/initialize", async (req, res) => {
     if (!process.env.PAYSTACK_SECRET_KEY) {
       return res.status(500).json({
         success: false,
-        message: "Paystack is not configured on the server.",
+        message:
+          "Paystack is not configured on the server.",
       });
     }
 
@@ -544,21 +596,27 @@ router.post("/initialize", async (req, res) => {
     ) {
       return res.status(400).json({
         success: false,
-        message: "All checkout information is required.",
+        message:
+          "All checkout information is required.",
       });
     }
 
-    if (!Array.isArray(items) || items.length === 0) {
+    if (
+      !Array.isArray(items) ||
+      items.length === 0
+    ) {
       return res.status(400).json({
         success: false,
         message: "Your cart is empty.",
       });
     }
 
-    const cleanedItems = items.map((item) => ({
-      productId: item.productId,
-      quantity: Number(item.quantity),
-    }));
+    const cleanedItems = items.map(
+      (item) => ({
+        productId: item.productId,
+        quantity: Number(item.quantity),
+      })
+    );
 
     for (const item of cleanedItems) {
       if (
@@ -569,20 +627,40 @@ router.post("/initialize", async (req, res) => {
       ) {
         return res.status(400).json({
           success: false,
-          message: "Invalid cart information.",
+          message:
+            "Invalid cart information.",
         });
       }
     }
 
-    const productIds = cleanedItems.map(
-      (item) => item.productId
-    );
+    const productIds =
+      cleanedItems.map(
+        (item) => Number(item.productId)
+      );
+
+    if (
+      productIds.some(
+        (id) =>
+          !Number.isInteger(id) ||
+          id <= 0
+      )
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Invalid product information.",
+      });
+    }
 
     const businessResult =
       await req.app.locals.pool.query(
         `SELECT
           id,
           business_name,
+          email,
+          delivery_fee,
+          free_delivery,
+          free_delivery_amount,
           paystack_subaccount_code
          FROM businesses
          WHERE slug = $1`,
@@ -596,9 +674,12 @@ router.post("/initialize", async (req, res) => {
       });
     }
 
-    const business = businessResult.rows[0];
+    const business =
+      businessResult.rows[0];
 
-    if (!business.paystack_subaccount_code) {
+    if (
+      !business.paystack_subaccount_code
+    ) {
       return res.status(400).json({
         success: false,
         message:
@@ -635,9 +716,15 @@ router.post("/initialize", async (req, res) => {
         [business.id, productIds]
       );
 
+    const uniqueProductIds = [
+      ...new Set(
+        productIds.map(String)
+      ),
+    ];
+
     if (
       productsResult.rows.length !==
-      new Set(productIds.map(String)).size
+      uniqueProductIds.length
     ) {
       return res.status(400).json({
         success: false,
@@ -648,16 +735,22 @@ router.post("/initialize", async (req, res) => {
 
     const productMap = new Map();
 
-    productsResult.rows.forEach((product) => {
-      productMap.set(String(product.id), product);
-    });
+    productsResult.rows.forEach(
+      (product) => {
+        productMap.set(
+          String(product.id),
+          product
+        );
+      }
+    );
 
-    let total = 0;
+    let subtotal = 0;
 
     for (const item of cleanedItems) {
-      const product = productMap.get(
-        String(item.productId)
-      );
+      const product =
+        productMap.get(
+          String(item.productId)
+        );
 
       if (!product) {
         return res.status(400).json({
@@ -667,28 +760,43 @@ router.post("/initialize", async (req, res) => {
         });
       }
 
-      if (Number(product.stock) < item.quantity) {
+      if (
+        Number(product.stock) <
+        item.quantity
+      ) {
         return res.status(400).json({
           success: false,
-          message: `${product.name} does not have enough stock.`,
+          message:
+            `${product.name} does not have enough stock.`,
         });
       }
 
       const unitPrice =
         product.discount_price !== null
-          ? Number(product.discount_price)
+          ? Number(
+              product.discount_price
+            )
           : Number(product.price);
 
-      total += unitPrice * item.quantity;
+      subtotal +=
+        unitPrice * item.quantity;
     }
 
-    if (!Number.isFinite(total) || total <= 0) {
+    if (
+      !Number.isFinite(subtotal) ||
+      subtotal <= 0
+    ) {
       return res.status(400).json({
         success: false,
-        message: "Unable to calculate your order total.",
+        message:
+          "Unable to calculate your order total.",
       });
     }
 
+    /*
+     * Delivery is calculated entirely on the server.
+     * The browser cannot change the amount being charged.
+     */
     const configuredDeliveryFee =
       Number(business.delivery_fee) || 0;
 
@@ -696,24 +804,35 @@ router.post("/initialize", async (req, res) => {
       business.free_delivery === true;
 
     const freeDeliveryAmount =
-      Number(business.free_delivery_amount) || 0;
+      Number(
+        business.free_delivery_amount
+      ) || 0;
 
     const deliveryFee =
       freeDelivery &&
-      total >= freeDeliveryAmount
+      subtotal >= freeDeliveryAmount
         ? 0
         : configuredDeliveryFee;
 
-    const orderTotal = total + deliveryFee;
+    const orderTotal =
+      subtotal + deliveryFee;
 
-    if (!Number.isFinite(orderTotal) || orderTotal <= 0) {
+    if (
+      !Number.isFinite(orderTotal) ||
+      orderTotal <= 0
+    ) {
       return res.status(400).json({
         success: false,
-        message: "Unable to calculate your order total.",
+        message:
+          "Unable to calculate your order total.",
       });
     }
 
-    const amountInKobo = Math.round(orderTotal * 100);
+    /*
+     * Paystack expects NGN amounts in kobo.
+     */
+    const amountInKobo =
+      Math.round(orderTotal * 100);
 
     const frontendUrl =
       process.env.FRONTEND_URL ||
@@ -723,15 +842,25 @@ router.post("/initialize", async (req, res) => {
       "https://api.paystack.co/transaction/initialize",
       {
         email,
+
+        /*
+         * IMPORTANT:
+         * This is now the product subtotal PLUS
+         * the applicable delivery fee.
+         */
         amount: amountInKobo,
+
         subaccount:
           business.paystack_subaccount_code,
+
         bearer: "subaccount",
+
         callback_url:
           frontendUrl +
           "/store/" +
           encodeURIComponent(slug) +
           "/payment-success",
+
         metadata: {
           slug,
           customerName,
@@ -740,7 +869,14 @@ router.post("/initialize", async (req, res) => {
           customerCity,
           customerState,
           items: cleanedItems,
-          amount: total,
+
+          /*
+           * Keep the complete server-calculated
+           * breakdown in Paystack metadata.
+           */
+          subtotal,
+          deliveryFee,
+          orderTotal,
         },
       },
       {
@@ -748,18 +884,34 @@ router.post("/initialize", async (req, res) => {
       }
     );
 
-    const paymentData = response.data.data;
+    const paymentData =
+      response.data.data;
 
     res.json({
       success: true,
-      message: "Payment initialized successfully.",
+      message:
+        "Payment initialized successfully.",
       payment: {
         authorizationUrl:
           paymentData.authorization_url,
-        accessCode: paymentData.access_code,
-        reference: paymentData.reference,
-        amount: total,
+
+        accessCode:
+          paymentData.access_code,
+
+        reference:
+          paymentData.reference,
+
+        /*
+         * Return the actual amount being charged,
+         * not just the product subtotal.
+         */
+        amount: orderTotal,
+
+        subtotal,
+        deliveryFee,
+
         currency: "NGN",
+
         subaccount:
           business.paystack_subaccount_code,
       },
@@ -767,7 +919,8 @@ router.post("/initialize", async (req, res) => {
   } catch (error) {
     console.error(
       "Paystack initialization error:",
-      error.response?.data || error.message
+      error.response?.data ||
+        error.message
     );
 
     res.status(500).json({
@@ -779,129 +932,178 @@ router.post("/initialize", async (req, res) => {
   }
 });
 
-router.get("/verify/:reference", async (req, res) => {
-  try {
-    if (!process.env.PAYSTACK_SECRET_KEY) {
-      return res.status(500).json({
-        success: false,
-        message: "Paystack is not configured on the server.",
-      });
-    }
-
-    const { reference } = req.params;
-
-    if (!reference) {
-      return res.status(400).json({
-        success: false,
-        message: "Payment reference is required.",
-      });
-    }
-
-    const response = await axios.get(
-      `https://api.paystack.co/transaction/verify/${encodeURIComponent(
-        reference
-      )}`,
-      {
-        headers: paystackHeaders,
+router.get(
+  "/verify/:reference",
+  async (req, res) => {
+    try {
+      if (!process.env.PAYSTACK_SECRET_KEY) {
+        return res.status(500).json({
+          success: false,
+          message:
+            "Paystack is not configured on the server.",
+        });
       }
-    );
 
-    const payment = response.data.data;
+      const { reference } =
+        req.params;
 
-    res.json({
-      success: true,
-      payment: {
-        reference: payment.reference,
-        status: payment.status,
-        amount: Number(payment.amount) / 100,
-        currency: payment.currency,
-        paidAt: payment.paid_at,
-        email: payment.customer?.email || "",
+      if (!reference) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Payment reference is required.",
+        });
+      }
+
+      const response =
+        await axios.get(
+          `https://api.paystack.co/transaction/verify/${encodeURIComponent(
+            reference
+          )}`,
+          {
+            headers: paystackHeaders,
+          }
+        );
+
+      const payment =
+        response.data.data;
+
+      if (!payment) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Paystack did not return payment information.",
+        });
+      }
+
+      res.json({
+        success: true,
+        payment: {
+          reference:
+            payment.reference,
+
+          status:
+            payment.status,
+
+          amount:
+            Number(payment.amount) /
+            100,
+
+          currency:
+            payment.currency,
+
+          paidAt:
+            payment.paid_at,
+
+          email:
+            payment.customer?.email ||
+            "",
+
+          subaccount:
+            payment.subaccount ||
+            null,
+        },
+      });
+    } catch (error) {
+      console.error(
+        "Paystack verification error:",
+        error.response?.data ||
+          error.message
+      );
+
+      res.status(500).json({
+        success: false,
+        message:
+          error.response?.data?.message ||
+          "Unable to verify payment.",
+      });
+    }
+  }
+);
+
+router.get(
+  "/account/paystack-details",
+  async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({
+          success: false,
+          message:
+            "You must be signed in.",
+        });
+      }
+
+      const result =
+        await req.app.locals.pool.query(
+          `SELECT paystack_subaccount_code
+           FROM businesses
+           WHERE user_id = $1`,
+          [req.session.userId]
+        );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message:
+            "Business not found.",
+        });
+      }
+
+      const subaccountCode =
+        result.rows[0]
+          .paystack_subaccount_code;
+
+      if (!subaccountCode) {
+        return res.status(404).json({
+          success: false,
+          message:
+            "No Paystack subaccount is connected.",
+        });
+      }
+
+      const response =
+        await axios.get(
+          `https://api.paystack.co/subaccount/${encodeURIComponent(
+            subaccountCode
+          )}`,
+          {
+            headers:
+              paystackHeaders,
+          }
+        );
+
+      res.json({
+        success: true,
         subaccount:
-          payment.subaccount || null,
-      },
-    });
-  } catch (error) {
-    console.error(
-      "Paystack verification error:",
-      error.response?.data || error.message
-    );
-
-    res.status(500).json({
-      success: false,
-      message:
-        error.response?.data?.message ||
-        "Unable to verify payment.",
-    });
-  }
-});
-
-router.get("/account/paystack-details", async (req, res) => {
-  try {
-    if (!req.session.userId) {
-      return res.status(401).json({
-        success: false,
-        message: "You must be signed in.",
+          response.data.data,
       });
-    }
+    } catch (error) {
+      console.error(
+        "Get Paystack subaccount error:",
+        error.response?.data ||
+          error.message
+      );
 
-    const result = await req.app.locals.pool.query(
-      `SELECT paystack_subaccount_code
-       FROM businesses
-       WHERE user_id = $1`,
-      [req.session.userId]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Business not found.",
-      });
-    }
-
-    const subaccountCode =
-      result.rows[0].paystack_subaccount_code;
-
-    if (!subaccountCode) {
-      return res.status(404).json({
-        success: false,
-        message: "No Paystack subaccount is connected.",
-      });
-    }
-
-    const response = await axios.get(
-      `https://api.paystack.co/subaccount/${encodeURIComponent(
-        subaccountCode
-      )}`,
-      {
-        headers: paystackHeaders,
+      if (
+        error.response?.status ===
+        404
+      ) {
+        return res.status(404).json({
+          success: false,
+          message:
+            "Subaccount not found",
+        });
       }
-    );
 
-    res.json({
-      success: true,
-      subaccount: response.data.data,
-    });
-  } catch (error) {
-    console.error(
-      "Get Paystack subaccount error:",
-      error.response?.data || error.message
-    );
-
-    if (error.response?.status === 404) {
-      return res.status(404).json({
+      res.status(500).json({
         success: false,
-        message: "Subaccount not found",
+        message:
+          error.response?.data
+            ?.message ||
+          "Unable to retrieve Paystack subaccount.",
       });
     }
-
-    res.status(500).json({
-      success: false,
-      message:
-        error.response?.data?.message ||
-        "Unable to retrieve Paystack subaccount.",
-    });
   }
-});
+);
 
 module.exports = router;
