@@ -148,13 +148,39 @@ export default function Checkout() {
     return Number(item.price || 0);
   }
 
-  const total = cart.reduce((sum, item) => {
+  const subtotal = cart.reduce((sum, item) => {
     return (
       sum +
       getItemPrice(item) *
         Number(item.quantity || 1)
     );
   }, 0);
+
+  const configuredDeliveryFee =
+    Number(
+      business?.delivery_fee ??
+        business?.deliveryFee ??
+        0
+    ) || 0;
+
+  const freeDelivery =
+    business?.free_delivery === true ||
+    business?.freeDelivery === true;
+
+  const freeDeliveryAmount =
+    Number(
+      business?.free_delivery_amount ??
+        business?.freeDeliveryAmount ??
+        0
+    ) || 0;
+
+  const deliveryFee =
+    freeDelivery &&
+    subtotal >= freeDeliveryAmount
+      ? 0
+      : configuredDeliveryFee;
+
+  const total = subtotal + deliveryFee;
 
   function formatPrice(price) {
     return `₦${Number(price).toLocaleString("en-NG", {
@@ -337,14 +363,17 @@ export default function Checkout() {
     const productLines = cart
       .map((item) => {
         const quantity = Number(item.quantity || 1);
-        const itemTotal =
-          getItemPrice(item) * quantity;
+        const unitPrice = getItemPrice(item);
+        const itemSubtotal = unitPrice * quantity;
 
-        return `${item.name} x${quantity} - ${formatPrice(
-          itemTotal
-        )}`;
+        return [
+          `Product: ${item.name}`,
+          `Quantity: ${quantity}`,
+          `Unit price: ${formatPrice(unitPrice)}`,
+          `Subtotal: ${formatPrice(itemSubtotal)}`
+        ].join("\n");
       })
-      .join("\n");
+      .join("\n\n");
 
     const message = [
       `Hello ${business?.business_name || business?.businessName || "Seller"},`,
@@ -354,7 +383,9 @@ export default function Checkout() {
       "ORDER DETAILS",
       productLines,
       "",
-      `Total: ${formatPrice(total)}`,
+      `Subtotal: ${formatPrice(subtotal)}`,
+      `Delivery fee: ${formatPrice(deliveryFee)}`,
+      `Final total: ${formatPrice(total)}`,
       "",
       "CUSTOMER DETAILS",
       `Name: ${form.fullName.trim()}`,
@@ -711,6 +742,22 @@ export default function Checkout() {
                   </strong>
                 </div>
               ))}
+            </div>
+
+            <div className="checkout-total">
+              <span>Subtotal</span>
+
+              <strong>
+                {formatPrice(subtotal)}
+              </strong>
+            </div>
+
+            <div className="checkout-total">
+              <span>Delivery</span>
+
+              <strong>
+                {formatPrice(deliveryFee)}
+              </strong>
             </div>
 
             <div className="checkout-total">

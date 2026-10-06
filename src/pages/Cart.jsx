@@ -29,10 +29,20 @@ export default function Cart() {
         (item) =>
           item &&
           item.productId &&
-          item.businessId
+          item.businessId &&
+          (!slug ||
+            String(item.businessSlug || "") === String(slug))
       );
 
       setCart(validCart);
+
+      if (validCart.length !== savedCart.length) {
+        localStorage.setItem(
+          "branda_cart",
+          JSON.stringify(validCart)
+        );
+        window.dispatchEvent(new Event("branda-cart-updated"));
+      }
     } catch {
       setCart([]);
     }
@@ -91,6 +101,45 @@ export default function Cart() {
         if (!newBusiness) {
           return;
         }
+
+        const newProducts =
+          data.products ||
+          (data.store ? data.store.products : []);
+
+        const validProductIds = new Set(
+          (Array.isArray(newProducts) ? newProducts : []).map(
+            (product) => String(product.id)
+          )
+        );
+
+        let currentCart = [];
+
+        try {
+          currentCart = JSON.parse(
+            localStorage.getItem("branda_cart") || "[]"
+          );
+        } catch {
+          currentCart = [];
+        }
+
+        const cleanedCart = Array.isArray(currentCart)
+          ? currentCart.filter(
+              (item) =>
+                item &&
+                String(item.businessId) === String(newBusiness.id) &&
+                validProductIds.has(String(item.productId)) &&
+                Number(item.quantity || 0) > 0
+            )
+          : [];
+
+        setCart(cleanedCart);
+
+        localStorage.setItem(
+          "branda_cart",
+          JSON.stringify(cleanedCart)
+        );
+
+        window.dispatchEvent(new Event("branda-cart-updated"));
 
         setBusiness(newBusiness);
 

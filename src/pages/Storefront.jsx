@@ -35,27 +35,7 @@ export default function Storefront() {
     }
   });
 
-  const [cartCount, setCartCount] = useState(() => {
-    const saved = localStorage.getItem("branda_cart");
-
-    if (!saved) {
-      return 0;
-    }
-
-    try {
-      const cart = JSON.parse(saved);
-
-      if (!Array.isArray(cart)) {
-        return 0;
-      }
-
-      return cart.reduce((total, item) => {
-        return total + Number(item.quantity || 0);
-      }, 0);
-    } catch {
-      return 0;
-    }
-  });
+  const [cartCount, setCartCount] = useState(0);
 
   useEffect(() => {
     async function loadStore() {
@@ -92,6 +72,37 @@ export default function Storefront() {
 
         setBusiness(newBusiness);
         setProducts(safeProducts);
+
+        const validProductIds = new Set(
+          safeProducts.map((product) => String(product.id))
+        );
+
+        let savedCart = [];
+
+        try {
+          const parsedCart = JSON.parse(
+            localStorage.getItem("branda_cart") || "[]"
+          );
+
+          if (Array.isArray(parsedCart)) {
+            savedCart = parsedCart.filter(
+              (item) =>
+                item &&
+                String(item.businessId) === String(newBusiness.id) &&
+                validProductIds.has(String(item.productId)) &&
+                Number(item.quantity || 0) > 0
+            );
+          }
+        } catch {
+          savedCart = [];
+        }
+
+        localStorage.setItem(
+          "branda_cart",
+          JSON.stringify(savedCart)
+        );
+
+        window.dispatchEvent(new Event("branda-cart-updated"));
 
         localStorage.setItem(
           "branda_business_" + slug,
@@ -160,7 +171,7 @@ export default function Storefront() {
         updateCartCount
       );
     };
-  }, []);
+  }, [slug]);
 
   if (!business) {
     return (
@@ -180,9 +191,9 @@ export default function Storefront() {
             to={"/store/" + business.slug}
             className="storefront-brand"
           >
-            {business.logo_url ? (
+            {business.logo_url || business.logoUrl ? (
               <img
-                src={business.logo_url}
+                src={business.logo_url || business.logoUrl}
                 alt={business.business_name}
               />
             ) : (
@@ -244,9 +255,9 @@ export default function Storefront() {
           </div>
 
           <div className="storefront-hero-visual">
-            {business.logo_url ? (
+            {business.logo_url || business.logoUrl ? (
               <img
-                src={business.logo_url}
+                src={business.logo_url || business.logoUrl}
                 alt={business.business_name}
               />
             ) : (
@@ -406,7 +417,7 @@ export default function Storefront() {
         >
           <div>
             <p className="storefront-eyebrow">
-              ABOUT THE BUSINESS
+              
             </p>
 
             <h2>

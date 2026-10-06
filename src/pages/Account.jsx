@@ -17,6 +17,9 @@ export default function Account() {
 
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [passwordSaving, setPasswordSaving] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [passwords, setPasswords] = useState({
     currentPassword: "",

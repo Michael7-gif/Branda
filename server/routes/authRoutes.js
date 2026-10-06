@@ -182,7 +182,25 @@ router.post("/signup", async (req, res) => {
       [fullName.trim(), normalizedEmail, hashedPassword]
     );
 
-    req.session.userId = result.rows[0].id;
+    await new Promise((resolve, reject) => {
+      req.session.regenerate((sessionError) => {
+        if (sessionError) {
+          reject(sessionError);
+          return;
+        }
+
+        req.session.userId = result.rows[0].id;
+
+        req.session.save((saveError) => {
+          if (saveError) {
+            reject(saveError);
+            return;
+          }
+
+          resolve();
+        });
+      });
+    });
 
     return res.status(201).json({
       success: true,
@@ -239,7 +257,25 @@ router.post("/login", async (req, res) => {
       });
     }
 
-    req.session.userId = user.id;
+    await new Promise((resolve, reject) => {
+      req.session.regenerate((sessionError) => {
+        if (sessionError) {
+          reject(sessionError);
+          return;
+        }
+
+        req.session.userId = user.id;
+
+        req.session.save((saveError) => {
+          if (saveError) {
+            reject(saveError);
+            return;
+          }
+
+          resolve();
+        });
+      });
+    });
 
     return res.json({
       success: true,
@@ -652,6 +688,17 @@ router.post("/reset-password", async (req, res) => {
 
     req.session.passwordResetUserId = null;
     req.session.passwordResetVerified = false;
+
+    await new Promise((resolve, reject) => {
+      req.session.save((saveError) => {
+        if (saveError) {
+          reject(saveError);
+          return;
+        }
+
+        resolve();
+      });
+    });
 
     return res.json({
       success: true,

@@ -14,6 +14,8 @@ export default function Signup() {
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -140,7 +142,7 @@ export default function Signup() {
               <input
                 id="password"
                 name="password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 placeholder="Create a password"
                 value={formData.password}
                 onChange={handleChange}
@@ -149,6 +151,14 @@ export default function Signup() {
               />
 
               <small>Use at least 8 characters.</small>
+
+              <button
+                type="button"
+                onClick={() => setShowPassword((current) => !current)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
             </div>
 
             <div className="signup-form-group">
@@ -157,13 +167,21 @@ export default function Signup() {
               <input
                 id="confirmPassword"
                 name="confirmPassword"
-                type="password"
+                type={showConfirmPassword ? "text" : "password"}
                 placeholder="Enter your password again"
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 minLength="8"
                 required
               />
+ 
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword((current) => !current)}
+                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+              >
+                {showConfirmPassword ? "Hide" : "Show"}
+              </button>
             </div>
 
             <button type="submit" disabled={loading}>

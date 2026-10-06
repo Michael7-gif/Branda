@@ -197,7 +197,11 @@ export default function ProductDetails() {
         const parsed = JSON.parse(saved);
 
         if (Array.isArray(parsed)) {
-          cart = parsed;
+          cart = parsed.filter(
+            (item) =>
+              item &&
+              String(item.businessId) === String(business.id)
+          );
         }
       } catch {
         cart = [];

@@ -10,6 +10,8 @@ export default function ResetPassword() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -146,7 +148,15 @@ export default function ResetPassword() {
                   setError("");
                 }}
                 required
-              />
+              /> 
+
+               <button
+                 type="button"
+                 onClick={() => setShowPassword((current) => !current)}
+                 aria-label={showPassword ? "Hide password" : "Show password"}
+               >
+                 {showPassword ? "Hide" : "Show"}
+               </button>
             </div>
 
             <div className="reset-password-form-group">
@@ -165,7 +175,15 @@ export default function ResetPassword() {
                   setError("");
                 }}
                 required
-              />
+              /> 
+
+               <button
+                 type="button"
+                 onClick={() => setShowConfirmPassword((current) => !current)}
+                 aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+               >
+                 {showConfirmPassword ? "Hide" : "Show"}
+               </button>
             </div>
 
             <button type="submit" disabled={loading}>

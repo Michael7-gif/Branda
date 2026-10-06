@@ -3,12 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import "../styles/store.css";
 import API_URL from "../services/api";
 
-const CLOUDINARY_CLOUD_NAME =
-  import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-
-const CLOUDINARY_UPLOAD_PRESET =
-  import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
-
 function getSavedBusiness() {
   const savedBusiness = localStorage.getItem("branda_business");
 
@@ -217,28 +211,20 @@ export default function Store() {
   }
 
   async function handleLogoChange(event) {
-    const file =
-      event.target.files?.[0];
+    const file = event.target.files?.[0];
 
     if (!file) {
       return;
     }
 
     if (!file.type.startsWith("image/")) {
-      setSaveError(
-        "Please select a valid image."
-      );
+      setSaveError("Please select a valid image.");
       event.target.value = "";
       return;
     }
 
-    if (
-      !CLOUDINARY_CLOUD_NAME ||
-      !CLOUDINARY_UPLOAD_PRESET
-    ) {
-      setSaveError(
-        "Image upload is not configured. Check your Cloudinary settings."
-      );
+    if (file.size > 5 * 1024 * 1024) {
+      setSaveError("Please choose an image smaller than 5 MB.");
       event.target.value = "";
       return;
     }
@@ -248,87 +234,44 @@ export default function Store() {
       setSaveError("");
       setSaveSuccess("");
 
-      const uploadData = new FormData();
+      const reader = new FileReader();
 
-      uploadData.append(
-        "file",
-        file
+      const image = await new Promise((resolve, reject) => {
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error("Unable to read the selected image."));
+        reader.readAsDataURL(file);
+      });
+
+      const response = await fetch(
+        `${API_URL}/api/upload/business-logo`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          credentials: "include",
+          body: JSON.stringify({ image })
+        }
       );
 
-      uploadData.append(
-        "upload_preset",
-        CLOUDINARY_UPLOAD_PRESET
-      );
+      const data = await response.json();
 
-      const controller =
-        new AbortController();
-
-      const timeout = setTimeout(() => {
-        controller.abort();
-      }, 30000);
-
-      let response;
-
-      try {
-        response = await fetch(
-          `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
-          {
-            method: "POST",
-            body: uploadData,
-            signal: controller.signal
-          }
-        );
-      } finally {
-        clearTimeout(timeout);
-      }
-
-      let data = {};
-
-      try {
-        data = await response.json();
-      } catch {
-        data = {};
-      }
-
-      if (!response.ok) {
+      if (!response.ok || !data.success || !data.image?.url) {
         throw new Error(
-          data?.error?.message ||
-            "Unable to upload the logo."
-        );
-      }
-
-      if (!data.secure_url) {
-        throw new Error(
-          "The image was uploaded but no image URL was returned."
+          data.message || "Unable to upload the logo."
         );
       }
 
       setForm((current) => ({
         ...current,
-        logoUrl: data.secure_url
+        logoUrl: data.image.url
       }));
 
-      setSaveSuccess(
-        "Logo uploaded successfully."
-      );
+      setSaveSuccess("Logo uploaded successfully.");
     } catch (err) {
-      if (err.name === "AbortError") {
-        setSaveError(
-          "The logo upload took too long. Please check your internet connection and try again."
-        );
-      } else if (
-        err.message === "Failed to fetch" ||
-        err instanceof TypeError
-      ) {
-        setSaveError(
-          "The image service could not be reached. Please check your internet connection and try again."
-        );
-      } else {
-        setSaveError(
-          err.message ||
-            "Unable to upload the logo."
-        );
-      }
+      setSaveError(
+        err.message || "Unable to upload the logo."
+      );
     } finally {
       setUploadingLogo(false);
       event.target.value = "";

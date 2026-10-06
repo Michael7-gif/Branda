@@ -689,7 +689,31 @@ router.post("/initialize", async (req, res) => {
       });
     }
 
-    const amountInKobo = Math.round(total * 100);
+    const configuredDeliveryFee =
+      Number(business.delivery_fee) || 0;
+
+    const freeDelivery =
+      business.free_delivery === true;
+
+    const freeDeliveryAmount =
+      Number(business.free_delivery_amount) || 0;
+
+    const deliveryFee =
+      freeDelivery &&
+      total >= freeDeliveryAmount
+        ? 0
+        : configuredDeliveryFee;
+
+    const orderTotal = total + deliveryFee;
+
+    if (!Number.isFinite(orderTotal) || orderTotal <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Unable to calculate your order total.",
+      });
+    }
+
+    const amountInKobo = Math.round(orderTotal * 100);
 
     const frontendUrl =
       process.env.FRONTEND_URL ||

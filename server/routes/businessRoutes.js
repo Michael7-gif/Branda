@@ -76,6 +76,27 @@ router.post("/", async (req, res) => {
       });
     }
 
+    if (!phone || !phone.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Phone number is required.",
+      });
+    }
+
+    if (!email || !email.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Email address is required.",
+      });
+    }
+
+    if (!whatsapp || !whatsapp.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "WhatsApp number is required.",
+      });
+    }
+
     const existingBusiness = await req.app.locals.pool.query(
       `SELECT id
        FROM businesses
@@ -164,8 +185,10 @@ router.post("/", async (req, res) => {
     res.status(500).json({
       success: false,
       message:
-        error.message ||
-        "Something went wrong while creating your business.",
+        process.env.NODE_ENV === "production"
+          ? "Something went wrong while creating your business."
+          : error.message ||
+            "Something went wrong while creating your business.",
     });
   }
 });
@@ -344,8 +367,10 @@ router.put("/me", async (req, res) => {
     res.status(500).json({
       success: false,
       message:
-        error.message ||
-        "Something went wrong while updating your business.",
+        process.env.NODE_ENV === "production"
+          ? "Something went wrong while updating your business."
+          : error.message ||
+            "Something went wrong while updating your business.",
     });
   }
 });

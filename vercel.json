@@ -5,6 +5,10 @@
       "destination": "https://branda-f5zu.onrender.com/api/:path*"
     },
     {
+      "source": "/store/:path*",
+      "destination": "/index.html"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

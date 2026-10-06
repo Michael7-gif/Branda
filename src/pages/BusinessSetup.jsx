@@ -22,6 +22,7 @@ export default function BusinessSetup() {
   const [logoPreview, setLogoPreview] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -32,21 +33,74 @@ export default function BusinessSetup() {
     }));
   }
 
-  function handleLogoChange(event) {
+  async function handleLogoChange(event) {
     const file = event.target.files?.[0];
 
     if (!file) {
       return;
     }
 
-    const previewUrl = URL.createObjectURL(file);
+    if (!file.type.startsWith("image/")) {
+      setError("Please select a valid image.");
+      event.target.value = "";
+      return;
+    }
 
-    setLogoPreview(previewUrl);
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Please choose an image smaller than 5 MB.");
+      event.target.value = "";
+      return;
+    }
 
-    setForm((current) => ({
-      ...current,
-      logoUrl: previewUrl,
-    }));
+    try {
+      setUploadingLogo(true);
+      setError("");
+
+      const reader = new FileReader();
+
+      const image = await new Promise((resolve, reject) => {
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error("Unable to read the selected image."));
+        reader.readAsDataURL(file);
+      });
+
+      const response = await fetch(
+        `${API_URL}/api/upload/business-logo`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({ image }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success || !data.image?.url) {
+        throw new Error(
+          data.message || "Unable to upload your business logo."
+        );
+      }
+
+      setLogoPreview(data.image.url);
+
+      setForm((current) => ({
+        ...current,
+        logoUrl: data.image.url,
+      }));
+    } catch (requestError) {
+      setError(requestError.message || "Unable to upload your business logo.");
+      setLogoPreview("");
+      setForm((current) => ({
+        ...current,
+        logoUrl: "",
+      }));
+    } finally {
+      setUploadingLogo(false);
+      event.target.value = "";
+    }
   }
 
   async function handleSubmit(event) {
@@ -56,6 +110,16 @@ export default function BusinessSetup() {
 
     if (!form.businessName.trim()) {
       setError("Please enter your business name.");
+      return;
+    }
+
+    if (!form.phone.trim()) {
+      setError("Please enter your phone number.");
+      return;
+    }
+
+    if (!form.email.trim()) {
+      setError("Please enter your email address.");
       return;
     }
 
@@ -208,8 +272,8 @@ export default function BusinessSetup() {
                 <div className="business-setup-field">
                   <label htmlFor="phone">
                     Phone number
-                    <span className="optional-label">
-                      Optional
+                    <span className="required-label">
+                      Required
                     </span>
                   </label>
 
@@ -220,14 +284,16 @@ export default function BusinessSetup() {
                     value={form.phone}
                     onChange={handleChange}
                     placeholder="08012345678"
+                  
+                    required
                   />
                 </div>
 
                 <div className="business-setup-field">
                   <label htmlFor="email">
                     Business email
-                    <span className="optional-label">
-                      Optional
+                    <span className="required-label">
+                      Required
                     </span>
                   </label>
 
@@ -238,6 +304,7 @@ export default function BusinessSetup() {
                     value={form.email}
                     onChange={handleChange}
                     placeholder="hello@yourbusiness.com"
+                    required
                   />
                 </div>
 

@@ -235,7 +235,8 @@ router.post("/", async (req, res) => {
       });
     }
 
-    const businessId = businessResult.rows[0].id;
+    const business = businessResult.rows[0];
+    const businessId = business.id;
 
     const paymentResponse = await axios.get(
       "https://api.paystack.co/transaction/verify/" +
@@ -358,11 +359,29 @@ router.post("/", async (req, res) => {
       });
     }
 
+    const configuredDeliveryFee =
+      Number(business.delivery_fee) || 0;
+
+    const freeDelivery =
+      business.free_delivery === true;
+
+    const freeDeliveryAmount =
+      Number(business.free_delivery_amount) || 0;
+
+    const deliveryFee =
+      freeDelivery &&
+      totalAmount >= freeDeliveryAmount
+        ? 0
+        : configuredDeliveryFee;
+
+    const orderTotal =
+      totalAmount + deliveryFee;
+
     const paidAmount =
       Number(payment.amount) / 100;
 
     if (
-      Math.abs(paidAmount - totalAmount) >
+      Math.abs(paidAmount - orderTotal) >
       0.01
     ) {
       await client.query("ROLLBACK");

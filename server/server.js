@@ -16,13 +16,31 @@ const paymentRoutes = require("./routes/paymentRoutes");
 
 const app = express();
 
+app.disable("x-powered-by");
+
 const PORT = process.env.PORT || 5000;
+
+if (!process.env.SESSION_SECRET) {
+  throw new Error("SESSION_SECRET is required.");
+}
 
 app.locals.pool = pool;
 
+const allowedOrigins = (process.env.FRONTEND_URL || "http://localhost:5173")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error("Origin is not allowed by CORS."));
+    },
     credentials: true
   })
 );
@@ -44,10 +62,7 @@ app.use(
     cookie: {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite:
-        process.env.NODE_ENV === "production"
-          ? "none"
-          : "lax",
+      sameSite: "lax",
       maxAge: 1000 * 60 * 60 * 24 * 7
     }
   })
@@ -79,7 +94,11 @@ app.get("/api/store/:slug", async (req, res) => {
         instagram,
         facebook,
         twitter,
-        logo_url
+        logo_url,
+        delivery_fee,
+        free_delivery,
+        free_delivery_amount,
+        delivery_time
        FROM businesses
        WHERE slug = $1`,
       [slug]
@@ -139,6 +158,19 @@ app.get("/api/store/:slug", async (req, res) => {
       message: "Unable to load store."
     });
   }
+});
+
+app.use((error, req, res, next) => {
+  console.error("Unhandled server error:", error);
+
+  if (res.headersSent) {
+    return next(error);
+  }
+
+  res.status(500).json({
+    success: false,
+    message: "An unexpected server error occurred."
+  });
 });
 
 app.get("/", (req, res) => {
