@@ -2,7 +2,11 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../styles/store.css";
 import API_URL from "../services/api";
-import { getCachedBusiness, getMyBusiness, setMyBusiness } from "../services/businessCache";
+import {
+  getCachedBusiness,
+  getMyBusiness,
+  setMyBusiness
+} from "../services/businessCache";
 
 function normalizeBusiness(data) {
   if (!data) {
@@ -77,7 +81,6 @@ function normalizeBusiness(data) {
       business.freeDeliveryAmount ??
       business.free_delivery_amount ??
       0
-
   };
 }
 
@@ -104,7 +107,6 @@ function createFormFromBusiness(business) {
 
     freeDeliveryAmount:
       normalized?.freeDeliveryAmount ?? 0
-
   };
 }
 
@@ -166,6 +168,13 @@ export default function Store() {
     }
   }
 
+  function openEditForm() {
+    setForm(createFormFromBusiness(business));
+    setSaveError("");
+    setSaveSuccess("");
+    setEditing(true);
+  }
+
   function handleChange(event) {
     const { name, value } = event.target;
 
@@ -203,7 +212,10 @@ export default function Store() {
 
       const image = await new Promise((resolve, reject) => {
         reader.onload = () => resolve(reader.result);
-        reader.onerror = () => reject(new Error("Unable to read the selected image."));
+        reader.onerror = () =>
+          reject(
+            new Error("Unable to read the selected image.")
+          );
         reader.readAsDataURL(file);
       });
 
@@ -221,9 +233,14 @@ export default function Store() {
 
       const data = await response.json();
 
-      if (!response.ok || !data.success || !data.image?.url) {
+      if (
+        !response.ok ||
+        !data.success ||
+        !data.image?.url
+      ) {
         throw new Error(
-          data.message || "Unable to upload the logo."
+          data.message ||
+            "Unable to upload the logo."
         );
       }
 
@@ -232,10 +249,13 @@ export default function Store() {
         logoUrl: data.image.url
       }));
 
-      setSaveSuccess("Logo uploaded successfully.");
+      setSaveSuccess(
+        "Logo uploaded successfully."
+      );
     } catch (err) {
       setSaveError(
-        err.message || "Unable to upload the logo."
+        err.message ||
+          "Unable to upload the logo."
       );
     } finally {
       setUploadingLogo(false);
@@ -321,7 +341,6 @@ export default function Store() {
               )
                 ? Number(form.freeDeliveryAmount)
                 : 0
-
           })
         }
       );
@@ -353,7 +372,6 @@ export default function Store() {
       );
 
       setMyBusiness(updatedBusiness);
-
 
       setSaveSuccess(
         "Store updated successfully."
@@ -442,9 +460,7 @@ export default function Store() {
               <button
                 type="button"
                 className="store-secondary-button"
-                onClick={
-                  openEditForm
-                }
+                onClick={openEditForm}
               >
                 Edit Store
               </button>
