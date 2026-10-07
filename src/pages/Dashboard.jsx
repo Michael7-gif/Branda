@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import API_URL from "../services/api";
 import "../styles/dashboard.css";
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [business, setBusiness] = useState(null);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -27,6 +30,25 @@ export default function Dashboard() {
   const firstName =
     localStorage.getItem("branda_user_name")?.split(" ")[0] ||
     "there";
+
+  async function handleLogout() {
+    if (loggingOut) return;
+
+    setLoggingOut(true);
+
+    try {
+      await fetch(`${API_URL}/api/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch {
+      // Clear local dashboard state even if the request cannot reach the server.
+    } finally {
+      localStorage.removeItem("branda_user_name");
+      localStorage.removeItem("branda_business");
+      navigate("/login", { replace: true });
+    }
+  }
 
   const hour = new Date().getHours();
 
@@ -54,6 +76,15 @@ export default function Dashboard() {
               View Store
             </Link>
           )}
+
+          <button
+            type="button"
+            className="dashboard-logout-button"
+            onClick={handleLogout}
+            disabled={loggingOut}
+          >
+            {loggingOut ? "Logging out..." : "Log out"}
+          </button>
         </nav>
       </header>
 
