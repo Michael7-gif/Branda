@@ -1,49 +1,15 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import "../styles/product-details.css";
-import API_URL from "../services/api";
+import { getPersistent, setPersistent } from "../services/persistence";
+import { getStore } from "../services/storeCache";
 
 export default function ProductDetails() {
   const { slug, productId } = useParams();
 
-  const [business, setBusiness] = useState(() => {
-    const saved = localStorage.getItem("branda_business_" + slug);
-
-    if (!saved) {
-      return null;
-    }
-
-    try {
-      return JSON.parse(saved);
-    } catch {
-      return null;
-    }
-  });
-
-  const [product, setProduct] = useState(() => {
-    const saved = localStorage.getItem("branda_products_" + slug);
-
-    if (!saved) {
-      return null;
-    }
-
-    try {
-      const products = JSON.parse(saved);
-
-      if (!Array.isArray(products)) {
-        return null;
-      }
-
-      return (
-        products.find(
-          (item) => String(item.id) === String(productId)
-        ) || null
-      );
-    } catch {
-      return null;
-    }
-  });
-
+  const [business, setBusiness] = useState(null);
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
@@ -52,38 +18,32 @@ export default function ProductDetails() {
     window.scrollTo({
       top: 0,
       left: 0,
-      behavior: "instant",
+      behavior: "instant"
     });
   }, [slug, productId]);
 
   useEffect(() => {
+    let cancelled = false;
+
     async function loadStore() {
+      setLoading(true);
+
       try {
-        const response = await fetch(
-          `${API_URL}/api/store/${encodeURIComponent(slug)}`
-        );
+        const data = await getStore(slug);
 
-        if (!response.ok) {
-          return;
-        }
-
-        const data = await response.json();
-
-        if (!data.success) {
+        if (cancelled) {
           return;
         }
 
         const newBusiness =
           data.business ||
-          (data.store ? data.store.business : null);
+          data.store?.business ||
+          null;
 
         const newProducts =
           data.products ||
-          (data.store ? data.store.products : []);
-
-        if (!newBusiness) {
-          return;
-        }
+          data.store?.products ||
+          [];
 
         const safeProducts = Array.isArray(newProducts)
           ? newProducts
@@ -95,22 +55,23 @@ export default function ProductDetails() {
 
         setBusiness(newBusiness);
         setProduct(foundProduct || null);
-
-        localStorage.setItem(
-          "branda_business_" + slug,
-          JSON.stringify(newBusiness)
-        );
-
-        localStorage.setItem(
-          "branda_products_" + slug,
-          JSON.stringify(safeProducts)
-        );
       } catch {
-        return;
+        if (!cancelled) {
+          setBusiness(null);
+          setProduct(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     }
 
     loadStore();
+
+    return () => {
+      cancelled = true;
+    };
   }, [slug, productId]);
 
   useEffect(() => {
@@ -119,19 +80,77 @@ export default function ProductDetails() {
     setAdded(false);
   }, [productId]);
 
-  if (!business || !product) {
+  async function addToCart() {
+    if (stock <= 0) {
+      return;
+    }
+
+    let cart = await getPersistent("cart", []);
+
+    if (!Array.isArray(cart)) {
+      cart = [];
+    }
+
+    cart = cart.filter(
+      (item) =>
+        item &&
+        String(item.businessId) === String(business.id)
+    );
+
+    const existingIndex = cart.findIndex(
+      (item) =>
+        String(item.productId) === String(product.id) &&
+        String(item.businessId) === String(business.id)
+    );
+
+    if (existingIndex >= 0) {
+      const newQuantity =
+        Number(cart[existingIndex].quantity || 0) +
+        quantity;
+
+      cart[existingIndex].quantity = Math.min(
+        newQuantity,
+        stock
+      );
+    } else {
+      cart.push({
+        productId: product.id,
+        businessId: business.id,
+        businessSlug: business.slug,
+        name: product.name,
+        price: currentPrice,
+        image: imageUrls[0] || "",
+        quantity,
+        stock
+      });
+    }
+
+    await setPersistent("cart", cart);
+
+    window.dispatchEvent(
+      new Event("branda-cart-updated")
+    );
+
+    setAdded(true);
+  }
+
+  if (loading || !business || !product) {
     return (
       <main className="product-details-message">
         <div className="product-details-message-inner">
           <span>PRODUCT</span>
-          <h1>Product not found</h1>
+          <h1>{loading ? "Loading product" : "Product not found"}</h1>
           <p>
-            The product you're looking for could not be found.
+            {loading
+              ? "Getting the product details..."
+              : "The product you're looking for could not be found."}
           </p>
 
-          <Link to={"/store/" + slug}>
-            Back to Store
-          </Link>
+          {!loading && (
+            <Link to={"/store/" + slug}>
+              Back to Store
+            </Link>
+          )}
         </div>
       </main>
     );
@@ -181,71 +200,6 @@ export default function ProductDetails() {
     if (quantity > 1) {
       setQuantity(quantity - 1);
     }
-  }
-
-  function addToCart() {
-    if (stock <= 0) {
-      return;
-    }
-
-    const saved = localStorage.getItem("branda_cart");
-
-    let cart = [];
-
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-
-        if (Array.isArray(parsed)) {
-          cart = parsed.filter(
-            (item) =>
-              item &&
-              String(item.businessId) === String(business.id)
-          );
-        }
-      } catch {
-        cart = [];
-      }
-    }
-
-    const existingIndex = cart.findIndex(
-      (item) =>
-        String(item.productId) === String(product.id) &&
-        String(item.businessId) === String(business.id)
-    );
-
-    if (existingIndex >= 0) {
-      const newQuantity =
-        Number(cart[existingIndex].quantity || 0) +
-        quantity;
-
-      cart[existingIndex].quantity = Math.min(
-        newQuantity,
-        stock
-      );
-    } else {
-      cart.push({
-        productId: product.id,
-        businessId: business.id,
-        businessSlug: business.slug,
-        name: product.name,
-        price: currentPrice,
-        image: imageUrls[0] || "",
-        quantity,
-        stock,
-      });
-    }
-
-    localStorage.setItem(
-      "branda_cart",
-      JSON.stringify(cart)
-    );
-
-    window.dispatchEvent(
-      new Event("branda-cart-updated")
-    );
-
-    setAdded(true);
   }
 
   return (
@@ -334,6 +288,7 @@ export default function ProductDetails() {
                   >
                     <img
                       src={image}
+                      loading="lazy"
                       alt={
                         product.name +
                         " " +

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import "../styles/payments.css";
 import API_URL from "../services/api";
+import { getMyBusiness, setMyBusiness } from "../services/businessCache";
 
 export default function Payments() {
   const [banks, setBanks] = useState([]);
@@ -47,22 +48,13 @@ export default function Payments() {
 
   async function loadBusiness() {
     try {
-      const response = await fetch(
-        `${API_URL}/api/business/me`,
-        {
-          credentials: "include"
-        }
-      );
+      const currentBusiness = await getMyBusiness();
 
-      if (!response.ok) {
-        return;
-      }
-
-      const data = await response.json();
-
-      if (data.business) {
-        setBusiness(data.business);
-        setPaymentMethod(data.business.payment_method || "both");
+      if (currentBusiness) {
+        setBusiness(currentBusiness);
+        setPaymentMethod(
+          currentBusiness.payment_method || "both"
+        );
       }
     } catch {
       return;
@@ -310,7 +302,7 @@ export default function Payments() {
       if (data.business) {
         setBusiness(data.business);
         setPaymentMethod(data.business.payment_method || paymentMethod);
-        localStorage.setItem("branda_business", JSON.stringify(data.business));
+        setMyBusiness(data.business);
       }
 
       setMessage("Payment options saved successfully.");

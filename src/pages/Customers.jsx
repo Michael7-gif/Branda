@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../styles/customers.css";
 import API_URL from "../services/api";
+import { getCachedBusiness } from "../services/businessCache";
 
 function formatMoney(value) {
   return `₦${Number(value || 0).toLocaleString("en-NG", {
@@ -35,17 +36,13 @@ function getStatusClass(status) {
 export default function Customers() {
   const navigate = useNavigate();
 
-  const [business, setBusiness] = useState(null);
+  const [business, setBusiness] = useState(getCachedBusiness);
+  const [customers, setCustomers] = useState([]);
 
-  const [customers, setCustomers] = useState(() => {
-    try {
-      return JSON.parse(
-        localStorage.getItem("branda_dashboard_customers") || "[]"
-      );
-    } catch {
-      return [];
-    }
-  });
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    setBusiness(getCachedBusiness());
+  }, []);
 
   const [error, setError] = useState("");
   const [selectedCustomer, setSelectedCustomer] = useState(null);
@@ -53,20 +50,6 @@ export default function Customers() {
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [ordersError, setOrdersError] = useState("");
   const [refreshing, setRefreshing] = useState(false);
-
-  useEffect(() => {
-    window.scrollTo(0, 0);
-
-    try {
-      const savedBusiness = localStorage.getItem("branda_business");
-
-      if (savedBusiness) {
-        setBusiness(JSON.parse(savedBusiness));
-      }
-    } catch {
-      setBusiness(null);
-    }
-  }, []);
 
   async function loadCustomers(showRefreshState = false) {
     if (showRefreshState) {
@@ -97,10 +80,6 @@ export default function Customers() {
 
       setCustomers(customerList);
 
-      localStorage.setItem(
-        "branda_dashboard_customers",
-        JSON.stringify(customerList)
-      );
     } catch (err) {
       setError(err.message || "Unable to load customers.");
     } finally {

@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import "../styles/checkout.css";
 import API_URL from "../services/api";
+import { getPersistent, setPersistent } from "../services/persistence";
+import { getStore } from "../services/storeCache";
 
 export default function Checkout() {
   const { slug } = useParams();
@@ -27,10 +29,14 @@ export default function Checkout() {
   useEffect(() => {
     window.scrollTo(0, 0);
 
-    try {
-      const savedCart = JSON.parse(
-        localStorage.getItem("branda_cart") || "[]"
-      );
+    let cancelled = false;
+
+    async function loadCheckout() {
+      const savedCart = await getPersistent("cart", []);
+
+      if (cancelled) {
+        return;
+      }
 
       if (!Array.isArray(savedCart) || savedCart.length === 0) {
         navigate(slug ? `/store/${slug}/cart` : "/cart");
@@ -44,95 +50,41 @@ export default function Checkout() {
         savedCart[0]?.slug ||
         "";
 
-      const savedStoreSlug =
-        localStorage.getItem("branda_current_store_slug") || "";
+      const recoveredSlug = slug || cartSlug;
 
-      const recoveredSlug =
-        slug || cartSlug || savedStoreSlug;
+      if (!recoveredSlug) {
+        return;
+      }
 
-      if (recoveredSlug) {
-        setStoreSlug(recoveredSlug);
+      setStoreSlug(recoveredSlug);
 
-        localStorage.setItem(
-          "branda_current_store_slug",
-          recoveredSlug
-        );
+      try {
+        const data = await getStore(recoveredSlug);
 
-        const cachedBusiness = localStorage.getItem(
-          `branda_business_${recoveredSlug}`
-        );
-
-        if (cachedBusiness) {
-          try {
-            const cached = JSON.parse(cachedBusiness);
-            setBusiness(cached);
-            applyBusinessPaymentMethod(cached);
-          } catch {
-            localStorage.removeItem(
-              `branda_business_${recoveredSlug}`
-            );
-          }
+        if (cancelled) {
+          return;
         }
 
-        loadBusiness(recoveredSlug);
+        const storeBusiness =
+          data.business ||
+          data.store?.business ||
+          null;
+
+        if (storeBusiness) {
+          setBusiness(storeBusiness);
+          applyBusinessPaymentMethod(storeBusiness);
+        }
+      } catch {
+        return;
       }
-    } catch {
-      setCart([]);
     }
+
+    loadCheckout();
+
+    return () => {
+      cancelled = true;
+    };
   }, [slug, navigate]);
-
-  function getAvailablePaymentMethod(value) {
-    const method = String(value || "both").toLowerCase();
-
-    if (method === "whatsapp") return "whatsapp";
-    if (method === "paystack") return "paystack";
-    return "paystack";
-  }
-
-  function applyBusinessPaymentMethod(storeBusiness) {
-    setPaymentMethod(getAvailablePaymentMethod(storeBusiness?.payment_method));
-  }
-
-  async function loadBusiness(storeSlugValue) {
-    try {
-      const response = await fetch(
-        `${API_URL}/api/store/${encodeURIComponent(
-          storeSlugValue
-        )}`
-      );
-
-      if (!response.ok) {
-        return;
-      }
-
-      const data = await response.json();
-
-      const storeBusiness =
-        data.business || data.store?.business;
-
-      if (!storeBusiness) {
-        return;
-      }
-
-      setBusiness(storeBusiness);
-      applyBusinessPaymentMethod(storeBusiness);
-
-      localStorage.setItem(
-        `branda_business_${storeSlugValue}`,
-        JSON.stringify(storeBusiness)
-      );
-
-      const storeProducts =
-        data.products || data.store?.products || [];
-
-      localStorage.setItem(
-        `branda_products_${storeSlugValue}`,
-        JSON.stringify(storeProducts)
-      );
-    } catch {
-      return;
-    }
-  }
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -247,9 +199,7 @@ export default function Checkout() {
     return (
       storeSlug ||
       cart[0]?.businessSlug ||
-      localStorage.getItem(
-        "branda_current_store_slug"
-      ) ||
+      cart[0]?.slug ||
       ""
     );
   }
@@ -312,24 +262,21 @@ export default function Checkout() {
         return;
       }
 
-      localStorage.setItem(
-        "branda_pending_payment",
-        JSON.stringify({
-          reference: data.payment.reference,
-          slug: paymentSlug,
-          customerName: form.fullName.trim(),
-          customerEmail: form.email.trim(),
-          customerPhone: form.phone.trim(),
-          customerAddress: form.address.trim(),
-          customerCity: form.city.trim(),
-          customerState: form.state.trim(),
-          items: cart.map((item) => ({
-            productId: item.productId,
-            quantity: Number(item.quantity || 1),
-          })),
-          amount: data.payment.amount,
-        })
-      );
+      await setPersistent("pending_payment", {
+        reference: data.payment.reference,
+        slug: paymentSlug,
+        customerName: form.fullName.trim(),
+        customerEmail: form.email.trim(),
+        customerPhone: form.phone.trim(),
+        customerAddress: form.address.trim(),
+        customerCity: form.city.trim(),
+        customerState: form.state.trim(),
+        items: cart.map((item) => ({
+          productId: item.productId,
+          quantity: Number(item.quantity || 1),
+        })),
+        amount: data.payment.amount,
+      });
 
       window.location.href =
         data.payment.authorizationUrl;
@@ -474,9 +421,7 @@ export default function Checkout() {
   const activeSlug =
     storeSlug ||
     cart[0]?.businessSlug ||
-    localStorage.getItem(
-      "branda_current_store_slug"
-    ) ||
+    cart[0]?.slug ||
     "";
 
   const storePath = activeSlug
@@ -748,6 +693,7 @@ export default function Checkout() {
                           item.imageUrl
                         }
                         alt={item.name}
+                        loading="lazy"
                       />
                     ) : (
                       <span>No image</span>

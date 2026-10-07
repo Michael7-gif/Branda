@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/business-setup.css";
 import API_URL from "../services/api";
+import { setMyBusiness } from "../services/businessCache";
 
 export default function BusinessSetup() {
   const navigate = useNavigate();
@@ -158,10 +159,7 @@ export default function BusinessSetup() {
       }
 
       if (data.business) {
-        localStorage.setItem(
-          "branda_business",
-          JSON.stringify(data.business)
-        );
+        setMyBusiness(data.business);
       }
 
       navigate("/dashboard");

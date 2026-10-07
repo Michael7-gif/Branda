@@ -1,5 +1,5 @@
 import { useState } from "react";
-import heroImage from "../assets/branda-hero.jpg";
+import heroImage from "../assets/branda-hero.webp";
 import "../styles/home.css";
 
 export default function Home() {
@@ -107,6 +107,11 @@ export default function Home() {
               src={heroImage}
               alt="Branda online store"
               className="hero-image"
+              width="1920"
+              height="1280"
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
             />
 
             <div className="hero-caption">

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import "../styles/analytics.css";
 import API_URL from "../services/api";
+import { getMyBusiness } from "../services/businessCache";
 
 export default function Analytics() {
   const [period, setPeriod] = useState("30");
@@ -64,21 +65,10 @@ export default function Analytics() {
 
   async function loadBusiness() {
     try {
-      const response = await fetch(
-        `${API_URL}/api/business/me`,
-        {
-          credentials: "include"
-        }
-      );
+      const currentBusiness = await getMyBusiness();
 
-      if (!response.ok) {
-        return;
-      }
-
-      const data = await response.json();
-
-      if (data.business) {
-        setBusiness(data.business);
+      if (currentBusiness) {
+        setBusiness(currentBusiness);
       }
     } catch {
       return;

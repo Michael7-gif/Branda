@@ -6,28 +6,15 @@ import {
 } from "react-router-dom";
 import "../styles/payment-success.css";
 import API_URL from "../services/api";
+import { getPersistent, removePersistent, setPersistent } from "../services/persistence";
+import { getStore } from "../services/storeCache";
 
 export default function PaymentSuccess() {
   const navigate = useNavigate();
   const { slug } = useParams();
   const [searchParams] = useSearchParams();
 
-  const [business, setBusiness] = useState(() => {
-    const saved = localStorage.getItem(
-      "branda_business_" + slug
-    );
-
-    if (!saved) {
-      return null;
-    }
-
-    try {
-      return JSON.parse(saved);
-    } catch {
-      return null;
-    }
-  });
-
+  const [business, setBusiness] = useState(null);
   const [status, setStatus] = useState("verifying");
   const [message, setMessage] = useState(
     "Verifying your payment..."
@@ -38,66 +25,43 @@ export default function PaymentSuccess() {
   }, []);
 
   useEffect(() => {
-    async function loadStore() {
-      if (!slug) {
-        return;
-      }
+    let cancelled = false;
 
-      try {
-        const response = await fetch(
-          `${API_URL}/api/store/${encodeURIComponent(slug)}`
-        );
-
-        const data = await response.json();
-
-        if (response.ok && data.success) {
-          setBusiness(data.store.business);
-
-          localStorage.setItem(
-            "branda_business_" + slug,
-            JSON.stringify(data.store.business)
-          );
-        }
-      } catch (error) {
-        console.error(
-          "Unable to load store:",
-          error
-        );
-      }
-    }
-
-    loadStore();
-  }, [slug]);
-
-  useEffect(() => {
     async function verifyPayment() {
       const reference = searchParams.get("reference");
 
       if (!reference) {
         setStatus("failed");
-        setMessage(
-          "Payment reference was not found."
-        );
+        setMessage("Payment reference was not found.");
         return;
       }
 
-      let savedPayment = null;
+      const storePromise = slug
+        ? getStore(slug).catch(() => null)
+        : Promise.resolve(null);
 
-      try {
-        savedPayment = JSON.parse(
-          localStorage.getItem(
-            "branda_pending_payment"
-          ) || "null"
-        );
-      } catch {
-        savedPayment = null;
+      const savedPayment =
+        await getPersistent("pending_payment", null);
+
+      if (cancelled) {
+        return;
       }
+
+      storePromise.then((storeData) => {
+        if (cancelled || !storeData?.success) {
+          return;
+        }
+
+        setBusiness(
+          storeData.business ||
+            storeData.store?.business ||
+            null
+        );
+      });
 
       if (!savedPayment) {
         setStatus("failed");
-        setMessage(
-          "Payment information could not be found."
-        );
+        setMessage("Payment information could not be found.");
         return;
       }
 
@@ -106,8 +70,7 @@ export default function PaymentSuccess() {
           `${API_URL}/api/payment/verify/${encodeURIComponent(reference)}`
         );
 
-        const paymentData =
-          await paymentResponse.json();
+        const paymentData = await paymentResponse.json();
 
         if (
           !paymentResponse.ok ||
@@ -119,28 +82,19 @@ export default function PaymentSuccess() {
           );
         }
 
-        if (
-          paymentData.payment.status !== "success"
-        ) {
+        if (paymentData.payment.status !== "success") {
           setStatus("failed");
-          setMessage(
-            "Your payment was not successful."
-          );
+          setMessage("Your payment was not successful.");
           return;
         }
 
         const customer =
           savedPayment.customer || {
-            fullName:
-              savedPayment.customerName || "",
-            phone:
-              savedPayment.customerPhone || "",
-            address:
-              savedPayment.customerAddress || "",
-            city:
-              savedPayment.customerCity || "",
-            state:
-              savedPayment.customerState || ""
+            fullName: savedPayment.customerName || "",
+            phone: savedPayment.customerPhone || "",
+            address: savedPayment.customerAddress || "",
+            city: savedPayment.customerCity || "",
+            state: savedPayment.customerState || ""
           };
 
         const cartItems =
@@ -168,57 +122,35 @@ export default function PaymentSuccess() {
               "Content-Type": "application/json"
             },
             body: JSON.stringify({
-              slug:
-                savedPayment.slug || slug,
-              customerName:
-                customer.fullName,
-              customerPhone:
-                customer.phone,
-              customerAddress:
-                customer.address,
-              customerCity:
-                customer.city,
-              customerState:
-                customer.state,
+              slug: savedPayment.slug || slug,
+              customerName: customer.fullName,
+              customerPhone: customer.phone,
+              customerAddress: customer.address,
+              customerCity: customer.city,
+              customerState: customer.state,
               paymentReference: reference,
-              items: cartItems.map(
-                (item) => ({
-                  productId:
-                    item.productId,
-                  quantity: Number(
-                    item.quantity || 1
-                  )
-                })
-              )
+              items: cartItems.map((item) => ({
+                productId: item.productId,
+                quantity: Number(item.quantity || 1)
+              }))
             })
           }
         );
 
-        const orderData =
-          await orderResponse.json();
+        const orderData = await orderResponse.json();
 
-        if (
-          !orderResponse.ok ||
-          !orderData.success
-        ) {
+        if (!orderResponse.ok || !orderData.success) {
           throw new Error(
             orderData.message ||
               "Payment succeeded, but the order could not be created."
           );
         }
 
-        localStorage.setItem(
-          "branda_order",
-          JSON.stringify(orderData.order)
-        );
-
-        localStorage.removeItem(
-          "branda_pending_payment"
-        );
-
-        localStorage.removeItem(
-          "branda_cart"
-        );
+        await Promise.all([
+          setPersistent("order", orderData.order),
+          removePersistent("pending_payment"),
+          removePersistent("cart")
+        ]);
 
         window.dispatchEvent(
           new Event("branda-cart-updated")
@@ -229,7 +161,7 @@ export default function PaymentSuccess() {
           "Your payment was successful. Preparing your order confirmation..."
         );
 
-        setTimeout(() => {
+        window.setTimeout(() => {
           navigate(
             "/store/" +
               (savedPayment.slug || slug) +
@@ -240,20 +172,23 @@ export default function PaymentSuccess() {
           );
         }, 1000);
       } catch (error) {
-        console.error(
-          "Payment verification error:",
-          error
-        );
+        console.error("Payment verification error:", error);
 
-        setStatus("failed");
-        setMessage(
-          error.message ||
-            "Unable to verify your payment."
-        );
+        if (!cancelled) {
+          setStatus("failed");
+          setMessage(
+            error.message ||
+              "Unable to verify your payment."
+          );
+        }
       }
     }
 
     verifyPayment();
+
+    return () => {
+      cancelled = true;
+    };
   }, [navigate, searchParams, slug]);
 
   return (

@@ -1,151 +1,88 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import "../styles/storefront.css";
-import API_URL from "../services/api";
+import { getPersistent } from "../services/persistence";
+import { getStore } from "../services/storeCache";
 
 export default function Storefront() {
   const { slug } = useParams();
 
-  const [business, setBusiness] = useState(() => {
-    const saved = localStorage.getItem("branda_business_" + slug);
-
-    if (!saved) {
-      return null;
-    }
-
-    try {
-      return JSON.parse(saved);
-    } catch {
-      return null;
-    }
-  });
-
-  const [products, setProducts] = useState(() => {
-    const saved = localStorage.getItem("branda_products_" + slug);
-
-    if (!saved) {
-      return [];
-    }
-
-    try {
-      const parsed = JSON.parse(saved);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
-    }
-  });
-
+  const [business, setBusiness] = useState(null);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [cartCount, setCartCount] = useState(0);
 
   useEffect(() => {
+    let cancelled = false;
+
     async function loadStore() {
+      setLoading(true);
+
       try {
-        const response = await fetch(
-          `${API_URL}/api/store/${encodeURIComponent(slug)}`
-        );
+        const data = await getStore(slug);
 
-        if (!response.ok) {
-          return;
-        }
-
-        const data = await response.json();
-
-        if (!data.success) {
+        if (cancelled) {
           return;
         }
 
         const newBusiness =
           data.business ||
-          (data.store ? data.store.business : null);
+          data.store?.business ||
+          null;
 
         const newProducts =
           data.products ||
-          (data.store ? data.store.products : []);
+          data.store?.products ||
+          [];
 
         if (!newBusiness) {
           return;
         }
 
-        const safeProducts = Array.isArray(newProducts)
-          ? newProducts
-          : [];
-
         setBusiness(newBusiness);
-        setProducts(safeProducts);
-
-        const validProductIds = new Set(
-          safeProducts.map((product) => String(product.id))
-        );
-
-        let savedCart = [];
-
-        try {
-          const parsedCart = JSON.parse(
-            localStorage.getItem("branda_cart") || "[]"
-          );
-
-          if (Array.isArray(parsedCart)) {
-            savedCart = parsedCart.filter(
-              (item) =>
-                item &&
-                String(item.businessId) === String(newBusiness.id) &&
-                validProductIds.has(String(item.productId)) &&
-                Number(item.quantity || 0) > 0
-            );
-          }
-        } catch {
-          savedCart = [];
-        }
-
-        localStorage.setItem(
-          "branda_cart",
-          JSON.stringify(savedCart)
-        );
-
-        window.dispatchEvent(new Event("branda-cart-updated"));
-
-        localStorage.setItem(
-          "branda_business_" + slug,
-          JSON.stringify(newBusiness)
-        );
-
-        localStorage.setItem(
-          "branda_products_" + slug,
-          JSON.stringify(safeProducts)
+        setProducts(
+          Array.isArray(newProducts) ? newProducts : []
         );
       } catch {
-        return;
+        if (!cancelled) {
+          setBusiness(null);
+          setProducts([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     }
 
     loadStore();
+
+    return () => {
+      cancelled = true;
+    };
   }, [slug]);
 
   useEffect(() => {
-    function updateCartCount() {
-      const saved = localStorage.getItem("branda_cart");
+    let active = true;
 
-      if (!saved) {
+    async function updateCartCount() {
+      const cart = await getPersistent("cart", []);
+
+      if (!active) {
+        return;
+      }
+
+      if (!Array.isArray(cart)) {
         setCartCount(0);
         return;
       }
 
-      try {
-        const cart = JSON.parse(saved);
+      const total = cart.reduce(
+        (sum, item) => sum + Number(item.quantity || 0),
+        0
+      );
 
-        if (!Array.isArray(cart)) {
-          setCartCount(0);
-          return;
-        }
-
-        const total = cart.reduce((sum, item) => {
-          return sum + Number(item.quantity || 0);
-        }, 0);
-
-        setCartCount(total);
-      } catch {
-        setCartCount(0);
-      }
+      setCartCount(total);
     }
 
     updateCartCount();
@@ -155,30 +92,25 @@ export default function Storefront() {
       updateCartCount
     );
 
-    window.addEventListener(
-      "storage",
-      updateCartCount
-    );
-
     return () => {
+      active = false;
       window.removeEventListener(
         "branda-cart-updated",
-        updateCartCount
-      );
-
-      window.removeEventListener(
-        "storage",
         updateCartCount
       );
     };
   }, [slug]);
 
-  if (!business) {
+  if (loading || !business) {
     return (
       <main className="storefront-message">
-        <h1>Store unavailable</h1>
-        <p>This store could not be found.</p>
-        <Link to="/">Back to Branda</Link>
+        <h1>{loading ? "" : "Store unavailable"}</h1>
+        <p>
+          {loading
+            ? ""
+            : "This store could not be found."}
+        </p>
+        {!loading && <Link to="/">Back to Branda</Link>}
       </main>
     );
   }
@@ -335,6 +267,7 @@ export default function Storefront() {
                       {image ? (
                         <img
                           src={image}
+                          loading="lazy"
                           alt={product.name}
                         />
                       ) : (

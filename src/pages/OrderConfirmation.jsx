@@ -1,65 +1,58 @@
 import { Link, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import "../styles/order-confirmation.css";
-import API_URL from "../services/api";
+import { getPersistent } from "../services/persistence";
+import { getStore } from "../services/storeCache";
 
 export default function OrderConfirmation() {
   const { slug } = useParams();
 
-  const [business, setBusiness] = useState(() => {
-    const saved = localStorage.getItem(
-      "branda_business_" + slug
-    );
-
-    if (!saved) {
-      return null;
-    }
-
-    try {
-      return JSON.parse(saved);
-    } catch {
-      return null;
-    }
-  });
-
+  const [business, setBusiness] = useState(null);
   const [order, setOrder] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     window.scrollTo(0, 0);
 
-    const savedOrder = JSON.parse(
-      localStorage.getItem("branda_order") || "null"
-    );
+    let cancelled = false;
 
-    setOrder(savedOrder);
-  }, []);
-
-  useEffect(() => {
-    async function loadStore() {
+    async function loadConfirmation() {
       try {
-        const response = await fetch(
-          `${API_URL}/api/store/${encodeURIComponent(slug)}`
-        );
+        const [savedOrder, storeData] = await Promise.all([
+          getPersistent("order", null),
+          slug
+            ? getStore(slug).catch(() => null)
+            : Promise.resolve(null)
+        ]);
 
-        const data = await response.json();
+        if (cancelled) {
+          return;
+        }
 
-        if (response.ok && data.success) {
-          setBusiness(data.store.business);
+        setOrder(savedOrder);
 
-          localStorage.setItem(
-            "branda_business_" + slug,
-            JSON.stringify(data.store.business)
+        if (storeData?.success) {
+          setBusiness(
+            storeData.business ||
+              storeData.store?.business ||
+              null
           );
         }
-      } catch (error) {
-        console.error("Unable to load store:", error);
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     }
 
-    loadStore();
+    loadConfirmation();
+
+    return () => {
+      cancelled = true;
+    };
   }, [slug]);
 
-  if (!order) {
+  if (loading || !order) {
     return (
       <div className="order-confirmation-page">
         <main className="order-confirmation-empty">
@@ -67,10 +60,12 @@ export default function OrderConfirmation() {
             ORDER INFORMATION
           </p>
 
-          <h1>No Order Found</h1>
+          <h1>{loading ? "Loading order" : "No Order Found"}</h1>
 
           <p>
-            We could not find your order information.
+            {loading
+              ? "Getting your order confirmation..."
+              : "We could not find your order information."}
           </p>
 
           <Link

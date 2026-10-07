@@ -56,15 +56,7 @@ export default function ResetPassword() {
 
       const data = await response.json();
 
-      console.log(
-        "Reset password status:",
-        response.status
-      );
 
-      console.log(
-        "Reset password response:",
-        data
-      );
 
       if (!response.ok) {
         setError(
@@ -78,9 +70,6 @@ export default function ResetPassword() {
         "Your password has been reset successfully. Redirecting you to sign in..."
       );
 
-      localStorage.removeItem(
-        "branda_reset_email"
-      );
 
       setTimeout(() => {
         navigate("/login");

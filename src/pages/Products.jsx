@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../styles/products.css";
 import API_URL from "../services/api";
+import { getCachedBusiness } from "../services/businessCache";
 
 const CLOUDINARY_CLOUD_NAME =
   import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
@@ -12,21 +13,8 @@ const CLOUDINARY_UPLOAD_PRESET =
 export default function Products() {
   const navigate = useNavigate();
 
-  const [business, setBusiness] = useState(null);
-
-  const [products, setProducts] = useState(() => {
-    try {
-      const savedProducts = localStorage.getItem("branda_products");
-
-      if (!savedProducts) {
-        return [];
-      }
-
-      return JSON.parse(savedProducts);
-    } catch {
-      return [];
-    }
-  });
+  const [business, setBusiness] = useState(getCachedBusiness);
+  const [products, setProducts] = useState([]);
 
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -51,16 +39,7 @@ export default function Products() {
   useEffect(() => {
     window.scrollTo(0, 0);
 
-    const savedBusiness = localStorage.getItem("branda_business");
-
-    if (savedBusiness) {
-      try {
-        setBusiness(JSON.parse(savedBusiness));
-      } catch {
-        setBusiness(null);
-      }
-    }
-
+    setBusiness(getCachedBusiness());
     loadProducts();
   }, []);
 
@@ -89,10 +68,6 @@ export default function Products() {
 
       setProducts(latestProducts);
 
-      localStorage.setItem(
-        "branda_products",
-        JSON.stringify(latestProducts)
-      );
     } catch (requestError) {
       console.error(requestError);
 
@@ -395,10 +370,6 @@ export default function Products() {
             )
           : [data.product, ...previous];
 
-        localStorage.setItem(
-          "branda_products",
-          JSON.stringify(updatedProducts)
-        );
 
         return updatedProducts;
       });
@@ -461,10 +432,6 @@ export default function Products() {
           (item) => item.id !== product.id
         );
 
-        localStorage.setItem(
-          "branda_products",
-          JSON.stringify(updatedProducts)
-        );
 
         return updatedProducts;
       });
@@ -748,6 +715,7 @@ export default function Products() {
 
                               <img
                                 src={image.imageUrl}
+                                loading="lazy"
                                 alt={formData.name}
                               />
 
@@ -824,6 +792,7 @@ export default function Products() {
 
                           <img
                             src={preview.url}
+                            loading="lazy"
                             alt={`New product preview ${
                               index + 1
                             }`}
@@ -1065,6 +1034,7 @@ export default function Products() {
                       >
                         <img
                           src={image.imageUrl}
+                          loading="lazy"
                           alt={`${selectedProduct.name} ${
                             index + 1
                           }`}

@@ -50,8 +50,6 @@ export default function VerifyResetCode() {
 
       const data = await response.json();
 
-      console.log("Verify status:", response.status);
-      console.log("Verify response:", data);
 
       if (!response.ok) {
         setError(

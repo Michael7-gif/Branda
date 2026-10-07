@@ -1,7 +1,8 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import "../styles/cart.css";
-import API_URL from "../services/api";
+import { getPersistent, setPersistent } from "../services/persistence";
+import { getStore } from "../services/storeCache";
 
 export default function Cart() {
   const { slug } = useParams();
@@ -15,147 +16,105 @@ export default function Cart() {
   }, []);
 
   useEffect(() => {
-    try {
-      const savedCart = JSON.parse(
-        localStorage.getItem("branda_cart") || "[]"
-      );
+    let cancelled = false;
 
-      if (!Array.isArray(savedCart)) {
-        setCart([]);
-        return;
-      }
+    async function loadCart() {
 
-      const validCart = savedCart.filter(
-        (item) =>
-          item &&
-          item.productId &&
-          item.businessId &&
-          (!slug ||
-            String(item.businessSlug || "") === String(slug))
-      );
-
-      setCart(validCart);
-
-      if (validCart.length !== savedCart.length) {
-        localStorage.setItem(
-          "branda_cart",
-          JSON.stringify(validCart)
-        );
-        window.dispatchEvent(new Event("branda-cart-updated"));
-      }
-    } catch {
-      setCart([]);
-    }
-  }, []);
-
-  const currentSlug =
-    slug ||
-    cart[0]?.businessSlug ||
-    cart[0]?.slug ||
-    localStorage.getItem("branda_current_store_slug");
-
-  useEffect(() => {
-    if (!currentSlug) {
-      return;
-    }
-
-    localStorage.setItem(
-      "branda_current_store_slug",
-      currentSlug
-    );
-
-    const savedBusiness = localStorage.getItem(
-      "branda_business_" + currentSlug
-    );
-
-    if (savedBusiness) {
       try {
-        setBusiness(JSON.parse(savedBusiness));
-      } catch {
-        setBusiness(null);
-      }
-    }
+        const savedCart = await getPersistent("cart", []);
+        const safeCart = Array.isArray(savedCart)
+          ? savedCart
+          : [];
 
-    async function loadBusiness() {
-      try {
-        const response = await fetch(
-          `${API_URL}/api/store/${encodeURIComponent(
-            currentSlug
-          )}`
+        const validCart = safeCart.filter(
+          (item) =>
+            item &&
+            item.productId &&
+            item.businessId &&
+            (!slug ||
+              String(item.businessSlug || "") === String(slug))
         );
 
-        if (!response.ok) {
+        if (cancelled) {
           return;
         }
 
-        const data = await response.json();
+        setCart(validCart);
 
-        if (!data.success) {
+        if (!validCart.length) {
+          return;
+        }
+
+        const currentSlug =
+          slug ||
+          validCart[0]?.businessSlug ||
+          validCart[0]?.slug ||
+          "";
+
+        if (!currentSlug) {
+          return;
+        }
+
+        const data = await getStore(currentSlug);
+
+        if (cancelled) {
           return;
         }
 
         const newBusiness =
           data.business ||
-          (data.store ? data.store.business : null);
-
-        if (!newBusiness) {
-          return;
-        }
+          data.store?.business ||
+          null;
 
         const newProducts =
           data.products ||
-          (data.store ? data.store.products : []);
+          data.store?.products ||
+          [];
 
-        const validProductIds = new Set(
-          (Array.isArray(newProducts) ? newProducts : []).map(
-            (product) => String(product.id)
-          )
-        );
-
-        let currentCart = [];
-
-        try {
-          currentCart = JSON.parse(
-            localStorage.getItem("branda_cart") || "[]"
+        if (newBusiness) {
+          const validProductIds = new Set(
+            (Array.isArray(newProducts)
+              ? newProducts
+              : []
+            ).map((product) => String(product.id))
           );
-        } catch {
-          currentCart = [];
+
+          const cleanedCart = validCart.filter(
+            (item) =>
+              String(item.businessId) ===
+                String(newBusiness.id) &&
+              validProductIds.has(String(item.productId)) &&
+              Number(item.quantity || 0) > 0
+          );
+
+          setCart(cleanedCart);
+          setBusiness(newBusiness);
+
+          if (cleanedCart.length !== validCart.length) {
+            await setPersistent("cart", cleanedCart);
+            window.dispatchEvent(
+              new Event("branda-cart-updated")
+            );
+          }
         }
-
-        const cleanedCart = Array.isArray(currentCart)
-          ? currentCart.filter(
-              (item) =>
-                item &&
-                String(item.businessId) === String(newBusiness.id) &&
-                validProductIds.has(String(item.productId)) &&
-                Number(item.quantity || 0) > 0
-            )
-          : [];
-
-        setCart(cleanedCart);
-
-        localStorage.setItem(
-          "branda_cart",
-          JSON.stringify(cleanedCart)
-        );
-
-        window.dispatchEvent(new Event("branda-cart-updated"));
-
-        setBusiness(newBusiness);
-
-        localStorage.setItem(
-          "branda_business_" + currentSlug,
-          JSON.stringify(newBusiness)
-        );
       } catch {
-        return;
+        if (!cancelled) {
+          setBusiness(null);
+        }
+      } finally {
+        if (!cancelled) {
+        }
       }
     }
 
-    loadBusiness();
-  }, [currentSlug]);
+    loadCart();
 
-  function updateQuantity(productId, quantity) {
+    return () => {
+      cancelled = true;
+    };
+  }, [slug]);
+
+  async function updateQuantity(productId, quantity) {
     const updatedCart = cart.map((item) =>
       item.productId === productId
         ? {
@@ -166,25 +125,25 @@ export default function Cart() {
     );
 
     setCart(updatedCart);
-
-    localStorage.setItem(
-      "branda_cart",
-      JSON.stringify(updatedCart)
-    );
+    await setPersistent("cart", updatedCart);
+    window.dispatchEvent(new Event("branda-cart-updated"));
   }
 
-  function removeItem(productId) {
+  async function removeItem(productId) {
     const updatedCart = cart.filter(
       (item) => item.productId !== productId
     );
 
     setCart(updatedCart);
-
-    localStorage.setItem(
-      "branda_cart",
-      JSON.stringify(updatedCart)
-    );
+    await setPersistent("cart", updatedCart);
+    window.dispatchEvent(new Event("branda-cart-updated"));
   }
+
+  const currentSlug =
+    slug ||
+    cart[0]?.businessSlug ||
+    cart[0]?.slug ||
+    "";
 
   const total = cart.reduce(
     (sum, item) =>
@@ -277,6 +236,7 @@ export default function Cart() {
                     {item.image ? (
                       <img
                         src={item.image}
+                        loading="lazy"
                         alt={item.name || "Product"}
                       />
                     ) : (

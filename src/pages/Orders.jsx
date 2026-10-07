@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../styles/orders.css";
 import API_URL from "../services/api";
+import { getCachedBusiness } from "../services/businessCache";
 
 const orderStatuses = [
   { value: "pending", label: "Pending" },
@@ -11,31 +12,11 @@ const orderStatuses = [
   { value: "cancelled", label: "Cancelled" }
 ];
 
-function getSavedOrders() {
-  try {
-    return JSON.parse(
-      localStorage.getItem("branda_dashboard_orders") || "[]"
-    );
-  } catch {
-    return [];
-  }
-}
-
-function getSavedBusiness() {
-  try {
-    return JSON.parse(
-      localStorage.getItem("branda_business") || "null"
-    );
-  } catch {
-    return null;
-  }
-}
-
 export default function Orders() {
   const navigate = useNavigate();
 
-  const [orders, setOrders] = useState(getSavedOrders);
-  const [business] = useState(getSavedBusiness);
+  const [orders, setOrders] = useState([]);
+  const [business] = useState(getCachedBusiness);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [savingStatus, setSavingStatus] = useState(false);
   const [error, setError] = useState("");
@@ -86,10 +67,6 @@ export default function Orders() {
 
         setOrders(freshOrders);
 
-        localStorage.setItem(
-          "branda_dashboard_orders",
-          JSON.stringify(freshOrders)
-        );
 
         setSelectedOrder((currentOrder) => {
           if (!currentOrder) {
@@ -111,7 +88,7 @@ export default function Orders() {
           return;
         }
 
-        if (getSavedOrders().length === 0) {
+        if (orders.length === 0) {
           setError(
             requestError.message ||
               "Unable to connect to Branda."
@@ -229,10 +206,6 @@ export default function Orders() {
 
       setOrders(updatedOrders);
 
-      localStorage.setItem(
-        "branda_dashboard_orders",
-        JSON.stringify(updatedOrders)
-      );
 
       setSelectedOrder((currentOrder) =>
         currentOrder?.id === orderId

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import "../styles/delivery.css";
 import API_URL from "../services/api";
+import { getMyBusiness, setMyBusiness } from "../services/businessCache";
 
 export default function Delivery() {
   const [business, setBusiness] = useState(null);
@@ -16,20 +17,11 @@ export default function Delivery() {
 
     async function loadDeliverySettings() {
       try {
-        const response = await fetch(
-          `${API_URL}/api/business/me`,
-          {
-            credentials: "include"
-          }
-        );
+        const currentBusiness = await getMyBusiness();
 
-        const data = await response.json();
-
-        if (!response.ok || !data.success) {
+        if (!currentBusiness) {
           return;
         }
-
-        const currentBusiness = data.business;
 
         setBusiness(currentBusiness);
 
@@ -54,11 +46,6 @@ export default function Delivery() {
         setDeliveryTime(
           currentBusiness.delivery_time ||
             "1–3 business days"
-        );
-
-        localStorage.setItem(
-          "branda_business",
-          JSON.stringify(currentBusiness)
         );
       } catch (error) {
         console.error(
@@ -141,10 +128,8 @@ export default function Delivery() {
           "1–3 business days"
       );
 
-      localStorage.setItem(
-        "branda_business",
-        JSON.stringify(updatedBusiness)
-      );
+      setMyBusiness(updatedBusiness);
+
 
       setSaved(true);
 

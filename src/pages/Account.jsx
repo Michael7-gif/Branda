@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import "../styles/account.css";
 import API_URL from "../services/api";
+import { getMyBusiness, setMyBusiness } from "../services/businessCache";
 
 export default function Account() {
   const [business, setBusiness] = useState({
@@ -32,32 +33,25 @@ export default function Account() {
 
     async function loadBusiness() {
       try {
-        const response = await fetch(
-          `${API_URL}/api/business/me`,
-          {
-            credentials: "include"
-          }
-        );
+        const currentBusiness = await getMyBusiness();
 
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(
-            data.message || "Unable to load account details."
-          );
+        if (!currentBusiness) {
+          throw new Error("Unable to load account details.");
         }
-
-        const currentBusiness = data.business || data;
 
         setBusiness({
           business_name: currentBusiness.business_name || "",
           email: currentBusiness.email || "",
           phone: currentBusiness.phone || "",
           address: currentBusiness.address || "",
-          description: currentBusiness.description || ""
+          description: currentBusiness.description || "",
+          slug: currentBusiness.slug || ""
         });
       } catch (requestError) {
-        setError(requestError.message);
+        setError(
+          requestError.message ||
+            "Unable to load account details."
+        );
       }
     }
 
@@ -113,6 +107,11 @@ export default function Account() {
         throw new Error(
           data.message || "Unable to save account details."
         );
+      }
+
+      if (data.business) {
+        setMyBusiness(data.business);
+        setBusiness(data.business);
       }
 
       setMessage("Account details saved successfully.");

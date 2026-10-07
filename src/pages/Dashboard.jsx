@@ -1,25 +1,35 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import API_URL from "../services/api";
+import { clearMyBusiness, getCachedBusiness, getMyBusiness } from "../services/businessCache";
 import "../styles/dashboard.css";
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [business, setBusiness] = useState(null);
+  const [business, setBusiness] = useState(getCachedBusiness);
   const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
 
-    const savedBusiness = localStorage.getItem("branda_business");
+    getMyBusiness()
+      .then((currentBusiness) => {
+        setBusiness(currentBusiness);
+      })
+      .catch(() => {});
 
-    if (savedBusiness) {
-      try {
-        setBusiness(JSON.parse(savedBusiness));
-      } catch {
-        setBusiness(null);
-      }
-    }
+    fetch(`${API_URL}/api/auth/me`, {
+      credentials: "include"
+    })
+      .then((response) =>
+        response.ok ? response.json() : null
+      )
+      .then((data) => {
+        if (data?.user?.full_name) {
+          setUserName(data.user.full_name);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const businessName =
@@ -27,9 +37,7 @@ export default function Dashboard() {
     business?.businessName ||
     "Your Store";
 
-  const firstName =
-    localStorage.getItem("branda_user_name")?.split(" ")[0] ||
-    "there";
+  const firstName = "there";
 
   async function handleLogout() {
     if (loggingOut) return;
@@ -44,8 +52,7 @@ export default function Dashboard() {
     } catch {
       // Clear local dashboard state even if the request cannot reach the server.
     } finally {
-      localStorage.removeItem("branda_user_name");
-      localStorage.removeItem("branda_business");
+      clearMyBusiness();
       navigate("/login", { replace: true });
     }
   }

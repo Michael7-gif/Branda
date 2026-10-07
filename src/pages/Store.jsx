@@ -1,21 +1,8 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../styles/store.css";
 import API_URL from "../services/api";
-
-function getSavedBusiness() {
-  const savedBusiness = localStorage.getItem("branda_business");
-
-  if (!savedBusiness) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(savedBusiness);
-  } catch {
-    return null;
-  }
-}
+import { getCachedBusiness, getMyBusiness, setMyBusiness } from "../services/businessCache";
 
 function normalizeBusiness(data) {
   if (!data) {
@@ -125,7 +112,7 @@ export default function Store() {
   const navigate = useNavigate();
 
   const [business, setBusiness] = useState(() =>
-    normalizeBusiness(getSavedBusiness())
+    normalizeBusiness(getCachedBusiness())
   );
 
   const [error, setError] = useState("");
@@ -136,14 +123,14 @@ export default function Store() {
   const [saveSuccess, setSaveSuccess] = useState("");
 
   const [form, setForm] = useState(() =>
-    createFormFromBusiness(getSavedBusiness())
+    createFormFromBusiness(getCachedBusiness())
   );
 
   useEffect(() => {
     window.scrollTo(0, 0);
 
     const savedBusiness = normalizeBusiness(
-      getSavedBusiness()
+      getCachedBusiness()
     );
 
     if (savedBusiness) {
@@ -156,75 +143,27 @@ export default function Store() {
 
   async function loadBusiness() {
     try {
-      const response = await fetch(
-        `${API_URL}/api/business/me`,
-        {
-          credentials: "include"
-        }
-      );
+      const currentBusiness = await getMyBusiness();
 
-      if (response.status === 401) {
+      if (!currentBusiness) {
         navigate("/login");
         return;
       }
 
-      const data = await response.json();
+      const loadedBusiness = normalizeBusiness(currentBusiness);
 
-      if (!response.ok) {
-        throw new Error(
-          data.message ||
-            "Unable to load your store."
-        );
-      }
+      setBusiness(loadedBusiness);
+      setMyBusiness(loadedBusiness);
 
-      const loadedBusiness =
-        normalizeBusiness(data);
-
-      if (!loadedBusiness) {
+      setForm(createFormFromBusiness(loadedBusiness));
+    } catch (requestError) {
+      if (requestError.status === 401) {
+        navigate("/login");
         return;
       }
 
-      setBusiness(loadedBusiness);
-
-      localStorage.setItem(
-        "branda_business",
-        JSON.stringify(loadedBusiness)
-      );
-
-      setForm(
-        createFormFromBusiness(
-          loadedBusiness
-        )
-      );
-
-      setError("");
-    } catch (err) {
-      const savedBusiness =
-        normalizeBusiness(
-          getSavedBusiness()
-        );
-
-      if (!savedBusiness) {
-        setError(
-          err.message ||
-            "Unable to load your store."
-        );
-      }
+      console.error(requestError);
     }
-  }
-
-  function openEditForm() {
-    if (!business) {
-      return;
-    }
-
-    setForm(
-      createFormFromBusiness(business)
-    );
-
-    setSaveError("");
-    setSaveSuccess("");
-    setEditing(true);
   }
 
   function handleChange(event) {
@@ -413,12 +352,8 @@ export default function Store() {
         )
       );
 
-      localStorage.setItem(
-        "branda_business",
-        JSON.stringify(
-          updatedBusiness
-        )
-      );
+      setMyBusiness(updatedBusiness);
+
 
       setSaveSuccess(
         "Store updated successfully."
