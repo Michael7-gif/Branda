@@ -64,7 +64,9 @@ export default function Checkout() {
 
         if (cachedBusiness) {
           try {
-            setBusiness(JSON.parse(cachedBusiness));
+            const cached = JSON.parse(cachedBusiness);
+            setBusiness(cached);
+            applyBusinessPaymentMethod(cached);
           } catch {
             localStorage.removeItem(
               `branda_business_${recoveredSlug}`
@@ -78,6 +80,18 @@ export default function Checkout() {
       setCart([]);
     }
   }, [slug, navigate]);
+
+  function getAvailablePaymentMethod(value) {
+    const method = String(value || "both").toLowerCase();
+
+    if (method === "whatsapp") return "whatsapp";
+    if (method === "paystack") return "paystack";
+    return "paystack";
+  }
+
+  function applyBusinessPaymentMethod(storeBusiness) {
+    setPaymentMethod(getAvailablePaymentMethod(storeBusiness?.payment_method));
+  }
 
   async function loadBusiness(storeSlugValue) {
     try {
@@ -101,6 +115,7 @@ export default function Checkout() {
       }
 
       setBusiness(storeBusiness);
+      applyBusinessPaymentMethod(storeBusiness);
 
       localStorage.setItem(
         `branda_business_${storeSlugValue}`,
@@ -643,67 +658,47 @@ export default function Checkout() {
               <h2>Payment method</h2>
 
               <div className="checkout-payment-options">
-                <label
-                  className={`checkout-payment-option ${
-                    paymentMethod === "paystack"
-                      ? "selected"
-                      : ""
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="paystack"
-                    checked={
-                      paymentMethod === "paystack"
-                    }
-                    onChange={(event) =>
-                      setPaymentMethod(
-                        event.target.value
-                      )
-                    }
-                  />
+                {(business?.payment_method || "both") !== "whatsapp" && (
+                  <label
+                    className={`checkout-payment-option ${
+                      paymentMethod === "paystack" ? "selected" : ""
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="paystack"
+                      checked={paymentMethod === "paystack"}
+                      onChange={(event) => setPaymentMethod(event.target.value)}
+                    />
 
-                  <span>
-                    <strong>Pay Online</strong>
-                    <small>
-                      Pay securely with Paystack.
-                    </small>
-                  </span>
-                </label>
+                    <span>
+                      <strong>Pay Online</strong>
+                      <small>Pay securely with Paystack.</small>
+                    </span>
+                  </label>
+                )}
 
-                <label
-                  className={`checkout-payment-option ${
-                    paymentMethod === "whatsapp"
-                      ? "selected"
-                      : ""
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="whatsapp"
-                    checked={
-                      paymentMethod === "whatsapp"
-                    }
-                    onChange={(event) =>
-                      setPaymentMethod(
-                        event.target.value
-                      )
-                    }
-                  />
+                {(business?.payment_method || "both") !== "paystack" && (
+                  <label
+                    className={`checkout-payment-option ${
+                      paymentMethod === "whatsapp" ? "selected" : ""
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="whatsapp"
+                      checked={paymentMethod === "whatsapp"}
+                      onChange={(event) => setPaymentMethod(event.target.value)}
+                    />
 
-                  <span>
-                    <strong>
-                      Order via WhatsApp
-                    </strong>
-                    <small>
-                      Send your order to the seller
-                      on WhatsApp and arrange
-                      payment directly.
-                    </small>
-                  </span>
-                </label>
+                    <span>
+                      <strong>Order via WhatsApp</strong>
+                      <small>Send your order to the seller on WhatsApp and arrange payment directly.</small>
+                    </span>
+                  </label>
+                )}
               </div>
             </section>
 

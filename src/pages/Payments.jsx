@@ -11,6 +11,8 @@ export default function Payments() {
   const [accountName, setAccountName] = useState("");
 
   const [business, setBusiness] = useState(null);
+  const [paymentMethod, setPaymentMethod] = useState("both");
+  const [savingPaymentMethod, setSavingPaymentMethod] = useState(false);
 
   const [loadingBanks, setLoadingBanks] = useState(false);
   const [verifying, setVerifying] = useState(false);
@@ -60,6 +62,7 @@ export default function Payments() {
 
       if (data.business) {
         setBusiness(data.business);
+        setPaymentMethod(data.business.payment_method || "both");
       }
     } catch {
       return;
@@ -282,6 +285,42 @@ export default function Payments() {
     }
   }
 
+  async function savePaymentMethod() {
+    setMessage("");
+    setError("");
+    setSavingPaymentMethod(true);
+
+    try {
+      const response = await fetch(
+        `${API_URL}/api/business/payment-settings`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ paymentMethod }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Unable to update payment options.");
+      }
+
+      if (data.business) {
+        setBusiness(data.business);
+        setPaymentMethod(data.business.payment_method || paymentMethod);
+        localStorage.setItem("branda_business", JSON.stringify(data.business));
+      }
+
+      setMessage("Payment options saved successfully.");
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setSavingPaymentMethod(false);
+    }
+  }
+
   async function savePaymentAccount(event) {
     event.preventDefault();
 
@@ -475,6 +514,39 @@ export default function Payments() {
           </p>
         </section>
 
+        <section className="payments-method-section">
+          <div className="payments-method-copy">
+            <p className="payments-label">CHECKOUT PAYMENT OPTIONS</p>
+            <h2>Choose how customers can pay.</h2>
+            <p>Decide which payment options should appear at checkout for this store.</p>
+          </div>
+
+          <div className="payments-method-form">
+            <div className="payments-method-options">
+              <label className={`payments-method-option ${paymentMethod === "both" ? "selected" : ""}`}>
+                <input type="radio" name="storePaymentMethod" value="both" checked={paymentMethod === "both"} onChange={(event) => setPaymentMethod(event.target.value)} />
+                <span><strong>Paystack + WhatsApp</strong><small>Show both payment choices to customers.</small></span>
+              </label>
+
+              <label className={`payments-method-option ${paymentMethod === "paystack" ? "selected" : ""}`}>
+                <input type="radio" name="storePaymentMethod" value="paystack" checked={paymentMethod === "paystack"} onChange={(event) => setPaymentMethod(event.target.value)} />
+                <span><strong>Paystack only</strong><small>Customers will only see secure online payment.</small></span>
+              </label>
+
+              <label className={`payments-method-option ${paymentMethod === "whatsapp" ? "selected" : ""}`}>
+                <input type="radio" name="storePaymentMethod" value="whatsapp" checked={paymentMethod === "whatsapp"} onChange={(event) => setPaymentMethod(event.target.value)} />
+                <span><strong>WhatsApp only</strong><small>Customers will send their order to you on WhatsApp.</small></span>
+              </label>
+            </div>
+
+            <button type="button" className="payments-save-button" onClick={savePaymentMethod} disabled={savingPaymentMethod}>
+              {savingPaymentMethod ? "Saving" : "Save Payment Options"}
+            </button>
+          </div>
+        </section>
+
+        {paymentMethod !== "whatsapp" && (
+          <>
         <section className="payments-account-section">
           <div className="payments-account-copy">
             <p className="payments-label">
@@ -613,6 +685,9 @@ export default function Payments() {
             </div>
           </form>
         </section>
+          </>
+        )}
+
 
         <section className="payment-history-section">
           <div className="payment-history-header">

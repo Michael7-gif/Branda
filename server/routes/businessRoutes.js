@@ -375,4 +375,34 @@ router.put("/me", async (req, res) => {
   }
 });
 
+
+router.put("/payment-settings", async (req, res) => {
+  try {
+    if (!req.session.userId) {
+      return res.status(401).json({ success: false, message: "You must be signed in." });
+    }
+
+    const allowed = new Set(["both", "paystack", "whatsapp"]);
+    const paymentMethod = String(req.body.paymentMethod || "both").trim().toLowerCase();
+
+    if (!allowed.has(paymentMethod)) {
+      return res.status(400).json({ success: false, message: "Choose Paystack, WhatsApp, or both payment methods." });
+    }
+
+    const result = await req.app.locals.pool.query(
+      `UPDATE businesses SET payment_method = $1 WHERE user_id = $2 RETURNING *`,
+      [paymentMethod, req.session.userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Business not found." });
+    }
+
+    return res.json({ success: true, message: "Payment options updated successfully.", business: result.rows[0] });
+  } catch (error) {
+    console.error("Update payment settings error:", error);
+    return res.status(500).json({ success: false, message: "Unable to update payment settings." });
+  }
+});
+
 module.exports = router;

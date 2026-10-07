@@ -26,6 +26,20 @@ if (!process.env.SESSION_SECRET) {
 
 app.locals.pool = pool;
 
+
+const ensureBusinessPaymentMethodColumn = async () => {
+  await pool.query(`
+    ALTER TABLE businesses
+    ADD COLUMN IF NOT EXISTS payment_method VARCHAR(20) DEFAULT 'both'
+  `);
+
+  await pool.query(`
+    UPDATE businesses
+    SET payment_method = 'both'
+    WHERE payment_method IS NULL
+  `);
+};
+
 const allowedOrigins = (process.env.FRONTEND_URL || "http://localhost:5173")
   .split(",")
   .map((origin) => origin.trim())
@@ -98,7 +112,8 @@ app.get("/api/store/:slug", async (req, res) => {
         delivery_fee,
         free_delivery,
         free_delivery_amount,
-        delivery_time
+        delivery_time,
+        payment_method
        FROM businesses
        WHERE slug = $1`,
       [slug]
@@ -199,6 +214,18 @@ app.get("/api/health", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log("Branda backend running on port " + PORT);
-});
+const startServer = async () => {
+  try {
+    await ensureBusinessPaymentMethodColumn();
+    console.log("Business payment method settings ready.");
+
+    app.listen(PORT, () => {
+      console.log("Branda backend running on port " + PORT);
+    });
+  } catch (error) {
+    console.error("Unable to prepare business payment settings:", error);
+    process.exit(1);
+  }
+};
+
+startServer();

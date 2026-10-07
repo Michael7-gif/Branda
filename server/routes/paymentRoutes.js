@@ -661,7 +661,8 @@ router.post("/initialize", async (req, res) => {
           delivery_fee,
           free_delivery,
           free_delivery_amount,
-          paystack_subaccount_code
+          paystack_subaccount_code,
+          payment_method
          FROM businesses
          WHERE slug = $1`,
         [slug]
@@ -676,6 +677,13 @@ router.post("/initialize", async (req, res) => {
 
     const business =
       businessResult.rows[0];
+
+    if ((business.payment_method || "both") === "whatsapp") {
+      return res.status(400).json({
+        success: false,
+        message: "This store accepts orders through WhatsApp instead of Paystack.",
+      });
+    }
 
     if (
       !business.paystack_subaccount_code
